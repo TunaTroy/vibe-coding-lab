@@ -7,6 +7,38 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
+const disposableEmailDomains = new Set([
+  'mailinator.com',
+  'tempmail.com',
+  '10minutemail.com',
+  'guerrillamail.com',
+  'yopmail.com',
+]);
+
+function isDisposableEmail(email) {
+  if (typeof email !== 'string') {
+    return false;
+  }
+
+  const atIndex = email.lastIndexOf('@');
+  if (atIndex === -1) {
+    return false;
+  }
+
+  const domain = email.slice(atIndex + 1).toLowerCase();
+  return disposableEmailDomains.has(domain);
+}
+
+function normalizeEmail(email) {
+  if (typeof email !== 'string') {
+    return '';
+  }
+
+  return email.trim().toLowerCase();
+}
+
 module.exports = {
   isValidEmail,
+  isDisposableEmail,
+  normalizeEmail,
 };
