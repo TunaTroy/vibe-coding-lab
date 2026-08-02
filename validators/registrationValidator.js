@@ -1,14 +1,7 @@
+const { isValidEmail } = require('./emailValidator');
+const { checkPasswordStrength } = require('./passwordValidator');
+
 function validateRegistrationForm(formData) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  function sendWelcomeEmail() {
-    console.log('sendWelcomeEmail called');
-  }
-
-  function logAudit() {
-    console.log('logAudit called');
-  }
-
   function buildErrorResult(errors, fallbackData) {
     return {
       isValid: false,
@@ -57,7 +50,7 @@ function validateRegistrationForm(formData) {
     const trimmedEmail = rawEmail.trim();
     if (trimmedEmail.length === 0) {
       errors.email = 'Email cannot be empty.';
-    } else if (!emailRegex.test(trimmedEmail)) {
+    } else if (!isValidEmail(trimmedEmail)) {
       errors.email = 'Email format is invalid.';
     } else {
       email = trimmedEmail;
@@ -72,35 +65,15 @@ function validateRegistrationForm(formData) {
     if (trimmedPassword.length === 0) {
       errors.password = 'Password cannot be empty.';
     } else {
-      let hasLowercase = false;
-      let hasUppercase = false;
-      let hasNumber = false;
-      let hasSymbol = false;
-
-      if (trimmedPassword.length < 8) {
-        errors.password = 'Password must be at least 8 characters long.';
-      } else {
-        for (let i = 0; i < trimmedPassword.length; i += 1) {
-          const char = trimmedPassword[i];
-          if (/[a-z]/.test(char)) {
-            hasLowercase = true;
-          }
-          if (/[A-Z]/.test(char)) {
-            hasUppercase = true;
-          }
-          if (/\d/.test(char)) {
-            hasNumber = true;
-          }
-          if (/[^A-Za-z0-9]/.test(char)) {
-            hasSymbol = true;
-          }
-        }
-
-        if (!hasLowercase || !hasUppercase || !hasNumber || !hasSymbol) {
-          errors.password = 'Password must include lowercase, uppercase, number, and symbol.';
+      const passwordStrength = checkPasswordStrength(trimmedPassword);
+      if (!passwordStrength.isStrong) {
+        if (!passwordStrength.checks.length) {
+          errors.password = 'Password must be at least 8 characters long.';
         } else {
-          password = trimmedPassword;
+          errors.password = 'Password must include lowercase, uppercase, number, and symbol.';
         }
+      } else {
+        password = trimmedPassword;
       }
     }
   }
@@ -143,9 +116,6 @@ function validateRegistrationForm(formData) {
       age,
     });
   }
-
-  sendWelcomeEmail();
-  logAudit();
 
   return {
     isValid: true,
