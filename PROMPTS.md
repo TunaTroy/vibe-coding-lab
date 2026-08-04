@@ -32,3 +32,18 @@
 -   Refactor hàm handleOrder hiện tại theo Repository Pattern + Service Layer, tách rõ 3
     lớp: Controller (nhận request) / Service (logic nghiệp vụ) / Repository (truy vấn dữ liệu).
     Giữ nguyên hành vi hiện tại 100%, viết kèm test đảm bảo không có regression.
+
+### 9. PROMPT — KIỂM TRA MCP SERVER ĐÃ KẾT NỐI
+-   Dùng MCP filesystem server, liệt kê các file trong thư mục [tên thư mục cần kiểm tra]
+    (dùng để xác nhận MCP server đã hoạt động, thay vì tin vào báo cáo "Connected" suông)
+## MẸO: CẤU HÌNH MCP KHÁC NHAU GIỮA CÁC CÔNG CỤ
+-   Claude Code: file .mcp.json ở thư mục gốc, key "mcpServers", kiểm tra qua lệnh
+    Terminal `claude mcp list`
+-   VS Code Copilot (đang dùng cho dự án này): file .vscode/mcp.json, key "servers",
+    kiểm tra qua Command Palette `Ctrl+Shift+P → MCP: List Servers`, hoặc xem log chi
+    tiết tại Output panel → chọn "MCP: [tên server]"
+## CẢNH BÁO: PHÂN QUYỀN KHI TRAO QUYỀN CHO MCP
+-   MCP server kết nối database với quyền superuser đồng nghĩa AI có thể chạy DROP
+    TABLE nếu hiểu sai yêu cầu. Luôn tạo user riêng với quyền tối thiểu
+    (Principle of Least Privilege) — ví dụ chỉ cấp SELECT, không cấp DELETE/DROP
+    trừ khi thực sự cần.    
