@@ -15,3 +15,11 @@
   Pro — thay bằng VS Code Agent (Copilot)
 - Không commit thư mục coverage/ vào Git — là báo cáo tự sinh, đã thêm vào .gitignore
 - Chưa thêm blacklist mật khẩu phổ biến cho passwordValidator — để lại việc sau
+
+## Ghi chú kỹ thuật hoãn lại (áp dụng khi cần)
+- Module 9.3 (Custom MCP Server): khi tích hợp hệ thống ngoài thật (ví dụ Postgres ở
+  Module 12), có thể tự viết MCP Server riêng bằng Node.js SDK
+  (@modelcontextprotocol/sdk) nếu server có sẵn không đủ tuỳ biến.
+- Module 9.4 (Phân quyền MCP): khi có Postgres thật, PHẢI tạo user riêng cho MCP với
+  quyền tối thiểu (chỉ SELECT), không dùng superuser — tránh AI vô tình chạy lệnh
+  DROP/DELETE nguy hiểm khi hiểu sai yêu cầu.
