@@ -1,0 +1,147 @@
+import bcrypt from 'bcryptjs';
+import request from 'supertest';
+import { app } from '../app';
+import { prisma } from '../config/prisma';
+
+describe('HTTP routes', () => {
+  const createdUserIds: string[] = [];
+
+  const makeEmail = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`;
+
+  afterEach(async () => {
+    if (createdUserIds.length === 0) {
+      return;
+    }
+
+    await prisma.todo.deleteMany({
+      where: { userId: { in: createdUserIds } },
+    });
+
+    await prisma.user.deleteMany({
+      where: { id: { in: createdUserIds } },
+    });
+
+    createdUserIds.length = 0;
+  });
+
+  it('registers a user through /auth/register and sets JWT cookie', async () => {
+    const email = makeEmail('register-user');
+    const res = await request(app)
+      .post('/auth/register')
+      .send({ email, password: 'password123' })
+      .expect(201);
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user) {
+      createdUserIds.push(user.id);
+    }
+
+    expect(res.body.message).toBe('Registered successfully.');
+    expect(res.headers['set-cookie']).toEqual(expect.arrayContaining([expect.stringContaining('token=')]));
+  });
+
+  it('logs in a user through /auth/login and sets JWT cookie', async () => {
+    const email = makeEmail('login-user');
+    const password = 'password123';
+    const created = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: await bcrypt.hash(password, 10),
+      },
+    });
+    createdUserIds.push(created.id);
+
+    const res = await request(app)
+      .post('/auth/login')
+      .send({ email, password })
+      .expect(200);
+
+    expect(res.body.message).toBe('Logged in successfully.');
+    expect(res.headers['set-cookie']).toEqual(expect.arrayContaining([expect.stringContaining('token=')]));
+  });
+
+  it('returns 400 for invalid auth payloads', async () => {
+    const res = await request(app)
+      .post('/auth/register')
+      .send({ email: 'not-an-email', password: '123' })
+      .expect(400);
+
+    expect(res.body.message).toBe('Validation error.');
+  });
+
+  it('requires authentication for protected todo routes', async () => {
+    await request(app).get('/todos').expect(401);
+    await request(app).post('/todos').send({ title: 'Protected todo' }).expect(401);
+  });
+
+  it('creates and lists todos for the authenticated user', async () => {
+    const email = makeEmail('todo-user');
+    const password = 'password123';
+    const agent = request.agent(app);
+
+    const created = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: await bcrypt.hash(password, 10),
+      },
+    });
+    createdUserIds.push(created.id);
+
+    const loginRes = await agent
+      .post('/auth/login')
+      .send({ email, password })
+      .expect(200);
+
+    expect(loginRes.headers['set-cookie']).toEqual(expect.arrayContaining([expect.stringContaining('token=')]));
+
+    const createRes = await agent
+      .post('/todos')
+      .send({ title: 'Route todo' })
+      .expect(201);
+
+    expect(createRes.body.todo).toMatchObject({
+      title: 'Route todo',
+      userId: created.id,
+    });
+
+    const listRes = await agent.get('/todos').expect(200);
+    expect(listRes.body.todos).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: createRes.body.todo.id,
+          title: 'Route todo',
+          userId: created.id,
+        }),
+      ]),
+    );
+  });
+
+  it('updates and deletes todos for the authenticated user', async () => {
+    const email = makeEmail('todo-update-user');
+    const password = 'password123';
+    const agent = request.agent(app);
+
+    const created = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: await bcrypt.hash(password, 10),
+      },
+    });
+    createdUserIds.push(created.id);
+
+    await agent.post('/auth/login').send({ email, password }).expect(200);
+
+    const createRes = await agent.post('/todos').send({ title: 'Editable todo' }).expect(201);
+    const todoId = createRes.body.todo.id;
+
+    const updateRes = await agent.put(`/todos/${todoId}`).send({ done: true }).expect(200);
+    expect(updateRes.body.todo).toMatchObject({
+      id: todoId,
+      title: 'Editable todo',
+      done: true,
+    });
+
+    const deleteRes = await agent.delete(`/todos/${todoId}`).expect(200);
+    expect(deleteRes.body.message).toBe('Todo deleted.');
+  });
+});
