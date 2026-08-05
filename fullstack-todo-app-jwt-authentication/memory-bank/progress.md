@@ -6,6 +6,9 @@
       — 100% Branch coverage (dự án gốc vibe-coding-lab)
 - [x] Module 6.2: Memory Bank, Module 7: Code Review, Module 8: Refactor,
       Module 9: MCP Filesystem Server
+- [x] Module 9.4 (hoãn từ trước): cấu hình MCP Postgres Server với user mcp_readonly
+      quyền hạn chế (SELECT only), verify kết nối và truy vấn thực tế thành công.
+      Lưu ý: chưa test thực nghiệm quyền bị chặn (chưa thử DELETE) — xem ai-logs.
 - [x] Module 12 — Backend fullstack-todo-app-jwt-authentication HOÀN THÀNH:
       - Prisma schema (User, Todo), PostgreSQL thật (database todo_app)
       - authController: register/login (bcrypt + JWT httpOnly cookie)

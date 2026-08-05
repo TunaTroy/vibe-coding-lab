@@ -32,3 +32,98 @@
 	
 2026-08-05 13:59:22.267 +07 [15560] LOG:  checkpoint starting: time
 2026-08-05 13:59:22.865 +07 [15560] LOG:  checkpoint complete: wrote 5 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.543 s, sync=0.028 s, total=0.598 s; sync files=6, longest=0.007 s, average=0.005 s; distance=17 kB, estimate=3811 kB; lsn=0/41E2608, redo lsn=0/41E25B0
+2026-08-05 14:09:22.868 +07 [15560] LOG:  checkpoint starting: time
+2026-08-05 14:09:23.750 +07 [15560] LOG:  checkpoint complete: wrote 7 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.824 s, sync=0.030 s, total=0.883 s; sync files=9, longest=0.007 s, average=0.004 s; distance=64 kB, estimate=3436 kB; lsn=0/41F2808, redo lsn=0/41F27B0
+2026-08-05 14:24:22.786 +07 [15560] LOG:  checkpoint starting: time
+2026-08-05 14:24:23.147 +07 [15560] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.323 s, sync=0.011 s, total=0.361 s; sync files=4, longest=0.004 s, average=0.003 s; distance=0 kB, estimate=3093 kB; lsn=0/41F2B40, redo lsn=0/41F2AE8
+2026-08-05 14:41:14.153 +07 [3408] ERROR:  relation "User" does not exist at character 15
+2026-08-05 14:41:14.153 +07 [3408] STATEMENT:  SELECT * FROM "User";
+2026-08-05 14:42:29.837 +07 [3408] ERROR:  relation "user" does not exist at character 15
+2026-08-05 14:42:29.837 +07 [3408] STATEMENT:  SELECT * FROM "user";
+2026-08-05 14:44:49.090 +07 [3408] ERROR:  null value in column "updated_at" of relation "users" violates not-null constraint
+2026-08-05 14:44:49.090 +07 [3408] DETAIL:  Failing row contains (user_manual_001, user_manual@gmail.com, $2a$10$s.Fk.mHNcjBfEjGFkEp/COXlkQROSFQNjA8P3/q032201hD.8..., 2026-08-05 14:44:49.088, null).
+2026-08-05 14:44:49.090 +07 [3408] STATEMENT:  INSERT INTO users (id, email, password_hash)
+	VALUES (
+	    'user_manual_001', 
+	    'user_manual@gmail.com', 
+	    '$2a$10$s.Fk.mHNcjBfEjGFkEp/COXlkQROSFQNjA8P3/q032201hD.8...'
+	);
+2026-08-05 14:49:22.192 +07 [15560] LOG:  checkpoint starting: time
+2026-08-05 14:49:22.692 +07 [15560] LOG:  checkpoint complete: wrote 4 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.438 s, sync=0.025 s, total=0.500 s; sync files=5, longest=0.007 s, average=0.005 s; distance=2 kB, estimate=2784 kB; lsn=0/41F34E8, redo lsn=0/41F3490
+2026-08-05 14:53:02.363 +07 [3408] ERROR:  column "completed" of relation "todos" does not exist at character 31
+2026-08-05 14:53:02.363 +07 [3408] STATEMENT:  INSERT INTO todos (id, title, completed, user_id, updated_at)
+	VALUES (
+	    'todo_manual_001', 
+	    'Hoc cach thao tac PostgreSQL qua pgAdmin', 
+	    false, 
+	    'cmsfrfkfa0000xmsbyq1r0t57',
+	    NOW()
+	);
+2026-08-05 14:57:19.096 +07 [3408] ERROR:  column "passwordhash" of relation "users" does not exist at character 31
+2026-08-05 14:57:19.096 +07 [3408] STATEMENT:  INSERT INTO users (id, email, passwordHash)
+	VALUES (
+	    'user_manual_001', 
+	    'user_manual@gmail.com', 
+	    '$2a$10$s.Fk.mHNcjBfEjGFkEp/COXlkQROSfQNjA8P3/qO32201hD.8itie'
+	);
+2026-08-05 14:57:53.967 +07 [3408] ERROR:  column "passwordhash" of relation "users" does not exist at character 31
+2026-08-05 14:57:53.967 +07 [3408] STATEMENT:  INSERT INTO users (id, email, passwordHash)
+	VALUES (
+	    'user_manual_001', 
+	    'user_manual@gmail.com', 
+	    'Dattuna0909$'
+	);
+2026-08-05 14:58:02.009 +07 [3408] ERROR:  null value in column "updated_at" of relation "users" violates not-null constraint
+2026-08-05 14:58:02.009 +07 [3408] DETAIL:  Failing row contains (user_manual_001, user_manual@gmail.com, Dattuna0909$, 2026-08-05 14:58:02.009, null).
+2026-08-05 14:58:02.009 +07 [3408] STATEMENT:  INSERT INTO users (id, email, password_hash)
+	VALUES (
+	    'user_manual_001', 
+	    'user_manual@gmail.com', 
+	    'Dattuna0909$'
+	);
+2026-08-05 14:58:45.108 +07 [3408] ERROR:  null value in column "updated_at" of relation "users" violates not-null constraint
+2026-08-05 14:58:45.108 +07 [3408] DETAIL:  Failing row contains (user_manual_001, user_manual@gmail.com, $2a$10$s.Fk.mHNcjBfEjGFkEp/COXlkQROSfQNjA8P3/qO32201hD.8itye, 2026-08-05 14:58:45.109, null).
+2026-08-05 14:58:45.108 +07 [3408] STATEMENT:  INSERT INTO users (id, email, password_hash)
+	VALUES (
+	    'user_manual_001', 
+	    'user_manual@gmail.com', 
+	    '$2a$10$s.Fk.mHNcjBfEjGFkEp/COXlkQROSfQNjA8P3/qO32201hD.8itye'
+	);
+2026-08-05 14:58:47.320 +07 [3408] ERROR:  null value in column "updated_at" of relation "users" violates not-null constraint
+2026-08-05 14:58:47.320 +07 [3408] DETAIL:  Failing row contains (user_manual_001, user_manual@gmail.com, $2a$10$s.Fk.mHNcjBfEjGFkEp/COXlkQROSfQNjA8P3/qO32201hD.8itye, 2026-08-05 14:58:47.32, null).
+2026-08-05 14:58:47.320 +07 [3408] STATEMENT:  INSERT INTO users (id, email, password_hash)
+	VALUES (
+	    'user_manual_001', 
+	    'user_manual@gmail.com', 
+	    '$2a$10$s.Fk.mHNcjBfEjGFkEp/COXlkQROSfQNjA8P3/qO32201hD.8itye'
+	);
+2026-08-05 14:59:17.258 +07 [3408] ERROR:  null value in column "password_hash" of relation "users" violates not-null constraint
+2026-08-05 14:59:17.258 +07 [3408] DETAIL:  Failing row contains (user_manual_001, user_manual@gmail.com, null, 2026-08-05 14:59:17.259, null).
+2026-08-05 14:59:17.258 +07 [3408] STATEMENT:  INSERT INTO users (id, email)
+	VALUES (
+	    'user_manual_001', 
+	    'user_manual@gmail.com'
+	);
+2026-08-05 14:59:22.704 +07 [15560] LOG:  checkpoint starting: time
+2026-08-05 14:59:23.076 +07 [15560] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.325 s, sync=0.022 s, total=0.372 s; sync files=4, longest=0.007 s, average=0.006 s; distance=7 kB, estimate=2506 kB; lsn=0/41F50F0, redo lsn=0/41F5098
+2026-08-05 15:04:22.081 +07 [15560] LOG:  checkpoint starting: time
+2026-08-05 15:04:22.442 +07 [15560] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.325 s, sync=0.012 s, total=0.362 s; sync files=4, longest=0.004 s, average=0.003 s; distance=1 kB, estimate=2255 kB; lsn=0/41F5608, redo lsn=0/41F55B0
+2026-08-05 15:24:22.476 +07 [15560] LOG:  checkpoint starting: time
+2026-08-05 15:24:22.842 +07 [15560] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.322 s, sync=0.018 s, total=0.366 s; sync files=4, longest=0.007 s, average=0.005 s; distance=7 kB, estimate=2031 kB; lsn=0/41F7338, redo lsn=0/41F72E0
+2026-08-05 15:28:49.845 +07 [3408] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-08-05 15:28:49.845 +07 [21948] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-08-05 15:39:22.862 +07 [15560] LOG:  checkpoint starting: time
+2026-08-05 15:39:24.248 +07 [15560] LOG:  checkpoint complete: wrote 12 buffers (0.1%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=1.311 s, sync=0.046 s, total=1.387 s; sync files=11, longest=0.007 s, average=0.005 s; distance=8 kB, estimate=1828 kB; lsn=0/41F94C0, redo lsn=0/41F9468
+2026-08-05 15:42:40.073 +07 [15560] LOG:  shutting down
+2026-08-05 15:42:40.074 +07 [12116] LOG:  received fast shutdown request
+2026-08-05 15:42:40.084 +07 [23864] ERROR:  canceling statement due to user request
+2026-08-05 15:42:40.090 +07 [15560] LOG:  checkpoint starting: shutdown immediate
+2026-08-05 15:42:40.099 +07 [12116] LOG:  aborting any active transactions
+2026-08-05 15:42:40.100 +07 [14512] FATAL:  terminating connection due to administrator command
+2026-08-05 15:42:40.127 +07 [15560] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.050 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=1645 kB; lsn=0/41F9570, redo lsn=0/41F9570
+2026-08-05 15:42:40.131 +07 [12116] LOG:  background worker "logical replication launcher" (PID 23864) exited with exit code 1
+2026-08-05 15:42:40.132 +07 [12116] LOG:  WAL was shut down unexpectedly
+2026-08-05 15:42:40.406 +07 [12116] LOG:  abnormal database system shutdown
+2026-08-05 15:42:40.411 +07 [12116] LOG:  database system is shut down
