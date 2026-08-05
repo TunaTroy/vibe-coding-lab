@@ -1,0 +1,34 @@
+2026-08-05 13:42:33.320 +07 [12116] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35227, 64-bit
+2026-08-05 13:42:33.324 +07 [12116] LOG:  listening on IPv6 address "::1", port 5432
+2026-08-05 13:42:33.324 +07 [12116] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-08-05 13:42:33.410 +07 [15632] LOG:  database system was interrupted; last known up at 2026-08-05 11:41:21 +07
+2026-08-05 13:42:33.664 +07 [15632] LOG:  database system was not properly shut down; automatic recovery in progress
+2026-08-05 13:42:33.681 +07 [15632] LOG:  redo starts at 0/2F7C5D8
+2026-08-05 13:42:33.681 +07 [15632] LOG:  invalid record length at 0/2F7C6E0: expected at least 24, got 0
+2026-08-05 13:42:33.682 +07 [15632] LOG:  redo done at 0/2F7C6A8 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+2026-08-05 13:42:33.699 +07 [15560] LOG:  checkpoint starting: end-of-recovery immediate wait
+2026-08-05 13:42:33.743 +07 [15560] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.011 s, total=0.052 s; sync files=2, longest=0.007 s, average=0.006 s; distance=0 kB, estimate=0 kB; lsn=0/2F7C6E0, redo lsn=0/2F7C6E0
+2026-08-05 13:42:33.767 +07 [12116] LOG:  database system is ready to accept connections
+2026-08-05 13:42:51.907 +07 [13336] ERROR:  database "todo_app" already exists
+2026-08-05 13:42:51.907 +07 [13336] STATEMENT:  CREATE DATABASE todo_app;
+2026-08-05 13:44:18.798 +07 [5492] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-08-05 13:44:19.602 +07 [15560] LOG:  checkpoint starting: immediate force wait
+2026-08-05 13:44:19.670 +07 [15560] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 1 recycled; write=0.007 s, sync=0.020 s, total=0.068 s; sync files=4, longest=0.006 s, average=0.005 s; distance=4700 kB, estimate=4700 kB; lsn=0/3413A38, redo lsn=0/34139E0
+2026-08-05 13:44:20.270 +07 [15560] LOG:  checkpoint starting: immediate force wait
+2026-08-05 13:44:20.321 +07 [15560] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.005 s, sync=0.019 s, total=0.052 s; sync files=4, longest=0.007 s, average=0.005 s; distance=4701 kB, estimate=4701 kB; lsn=0/38AAEA8, redo lsn=0/38AAE50
+2026-08-05 13:44:21.897 +07 [15560] LOG:  checkpoint starting: immediate force wait
+2026-08-05 13:44:21.958 +07 [15560] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.021 s, total=0.061 s; sync files=4, longest=0.007 s, average=0.006 s; distance=4701 kB, estimate=4701 kB; lsn=0/3D42440, redo lsn=0/3D423E8
+2026-08-05 13:44:22.442 +07 [15560] LOG:  checkpoint starting: immediate force wait
+2026-08-05 13:44:22.527 +07 [15560] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 1 recycled; write=0.014 s, sync=0.021 s, total=0.085 s; sync files=4, longest=0.007 s, average=0.006 s; distance=4701 kB, estimate=4701 kB; lsn=0/41D9AE0, redo lsn=0/41D9A88
+2026-08-05 13:44:22.618 +07 [16596] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-08-05 13:49:22.539 +07 [15560] LOG:  checkpoint starting: time
+2026-08-05 13:49:23.250 +07 [15560] LOG:  checkpoint complete: wrote 6 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.656 s, sync=0.032 s, total=0.711 s; sync files=7, longest=0.007 s, average=0.005 s; distance=17 kB, estimate=4233 kB; lsn=0/41DDFC8, redo lsn=0/41DDF70
+2026-08-05 13:57:38.014 +07 [17184] FATAL:  role "Troy" does not exist
+2026-08-05 13:58:25.128 +07 [21124] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-08-05 13:58:25.261 +07 [7824] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-08-05 13:59:22.267 +07 [15560] LOG:  checkpoint starting: time
+2026-08-05 13:59:22.865 +07 [15560] LOG:  checkpoint complete: wrote 5 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.543 s, sync=0.028 s, total=0.598 s; sync files=6, longest=0.007 s, average=0.005 s; distance=17 kB, estimate=3811 kB; lsn=0/41E2608, redo lsn=0/41E25B0

@@ -2,62 +2,51 @@
 
 ## Đã hoàn thành
 - [x] Setup môi trường: VS Code, Node.js, Git
-- [x] validators/emailValidator.js, passwordValidator.js — 100% Branch coverage
-- [x] Quy chuẩn kỹ thuật: .github/copilot-instructions.md (có Self-Check bắt buộc)
-- [x] Ghi log AI đầy đủ tại docs/ai-logs/
-- [x] Master Prompt + Refactor Prompt tái sử dụng tại PROMPTS.md
-- [x] Module 6.2: Memory Bank — verify thành công qua New Chat và qua máy PC mới
-- [x] Module 7: AI Code Review trên passwordValidator.js
-- [x] Module 8: validators/registrationValidator.js — refactor từ spaghetti code,
-      dùng lại emailValidator/passwordValidator — 100% Branch coverage
-- [x] Module 9: MCP Filesystem Server cấu hình qua .vscode/mcp.json — verify thành
-      công (14 tools, Running)
-- [x] Module 10-11 (Git Worktree/tmux, Background Agents): TẠM BỎ QUA lý thuyết,
-      nhảy thẳng sang Module 12 — nhưng đã VÔ TÌNH áp dụng thực tế Git Worktree khi
-      Cloud Agent tự tạo thư mục vibe-coding-lab.worktrees/ cho dự án con
-      fullstack-todo-app-jwt-authentication
-- [x] Module 12 — Backend scaffold: Express + TypeScript + Prisma
-- [x] Module 12 — PostgreSQL cài đặt thật, database todo_app tạo thành công,
-      migration 20260805000000_init đã áp dụng, Prisma Client generated
-- [x] Module 12 — Prisma schema (User, Todo với quan hệ userId)
-- [x] Module 12 — authController: register/login dùng bcrypt + JWT (cookie httpOnly)
-- [x] Module 12 — middleware requireAuth: đọc JWT từ cookie, verify, gắn req.user
-- [x] Module 12 — todoController: CRUD có kiểm tra userId (cần verify lại độ chắc
-      chắn của IDOR check — xem mục "Đang làm")
+- [x] validators/emailValidator.js, passwordValidator.js, registrationValidator.js
+      — 100% Branch coverage (dự án gốc vibe-coding-lab)
+- [x] Module 6.2: Memory Bank, Module 7: Code Review, Module 8: Refactor,
+      Module 9: MCP Filesystem Server
+- [x] Module 12 — Backend fullstack-todo-app-jwt-authentication HOÀN THÀNH:
+      - Prisma schema (User, Todo), PostgreSQL thật (database todo_app)
+      - authController: register/login (bcrypt + JWT httpOnly cookie)
+      - middleware requireAuth
+      - todoController: CRUD đầy đủ, verify IDOR bằng Integration Test THẬT
+        (không mock) tại repositoryIntegration.test.ts
+      - routes (authRoutes, todoRoutes) test bằng Supertest
+      - Coverage cuối: 9/9 test suites PASS, 51/51 tests PASS,
+        96.84% Stmts, 100% Branch toàn bộ business logic
+- [x] Khắc phục thành công sự cố đồng bộ đa máy (PC ↔ Laptop) do dùng zip/copy
+      thủ công thay vì Git: worktree link hỏng, merge conflict, cấu trúc lồng sai,
+      thiếu ts-jest, DB chưa sẵn sàng — xem chi tiết
+      docs/ai-logs/2026-08-05-worktree-recovery-and-final-coverage.md
+- [x] Dọn dẹp workspace root bằng AI Agent với ràng buộc tuyệt đối không đụng
+      backend — archive các file/folder rác (logfile, memory-bank-summary-review*,
+      package.json trùng ở root), cập nhật .gitignore, verify không gãy test
 
 ## Đang làm
-- [ ] SỰ CỐ PHÁT HIỆN: lần đầu AI báo "7 test suites passed, 30/30 tests passed" khi
-      chạy `npx jest --coverage=false` — SAI QUY TRÌNH (tắt coverage, vi phạm
-      Self-Check bắt buộc). Chạy lại đúng `npx jest --coverage` phát hiện:
-      1. Test THẤT BẠI thật: src/tests/env.test.ts — env.ts không throw lỗi
-         "DATABASE_URL is required" khi thiếu biến môi trường như mong đợi
-      2. Coverage chỉ đạt 61.57% toàn project (yêu cầu 100%), đặc biệt thấp ở
-         2 file bảo mật quan trọng nhất: todoController.ts (60% Branch),
-         authController.ts (50% Branch) — CẦN ưu tiên vá trước khi tin tưởng
-         logic ownership/IDOR đã đúng
-- [ ] Đang sửa src/config/env.ts theo đúng PLAN/ACT/REVIEW, sau đó vá coverage cho
-      todoController.ts và authController.ts
+- [ ] Chuẩn bị bắt đầu Frontend (React + TailwindCSS)
 
 ## Việc tiếp theo
-- [ ] Sau khi backend đạt 100% Branch coverage + 0 test fail: Code Review bảo mật
-      riêng cho todoController/authController (kiểm tra IDOR — userId có lọc thật
-      trong query DB, không chỉ check ở tầng code sau khi lấy hết dữ liệu)
-- [ ] Đổi JWT_SECRET từ "hai-chuyen-tau-dem" sang chuỗi random thật (dùng
-      crypto.randomBytes) — hiện tại chỉ tạm chấp nhận vì đang ở môi trường dev/local
-- [ ] Thêm postgres MCP server vào .vscode/mcp.json (đã có DB thật, đúng lúc áp dụng
-      Module 9.3/9.4 đã hoãn) — dùng user quyền hạn chế (Least Privilege), không
-      dùng superuser postgres
-- [ ] Frontend: React + TailwindCSS (chưa bắt đầu)
+- [ ] Frontend: React + TailwindCSS — trang đăng ký/đăng nhập/danh sách Todo
+- [ ] Đổi JWT_SECRET sang chuỗi random an toàn (crypto.randomBytes) — hiện vẫn
+      còn giá trị tạm "hai-chuyen-tau-dem"
+- [ ] Cấu hình postgres MCP server với user quyền hạn chế (Least Privilege) —
+      hoãn từ Module 9.4, giờ đã có DB thật nên đúng lúc áp dụng
+- [ ] Vá nốt 2 dòng chưa coverage: app.ts dòng 17, errorHandler.ts dòng 12
+      (mức độ ưu tiên thấp — không phải business logic bảo mật)
 - [ ] Bảng tiêu chí tự đánh giá cuối Module 12
 
 ## Ghi chú kỹ thuật quan trọng (rút ra trong quá trình làm)
 - Cloud Agent session của Copilot có thể tạo code trên branch/worktree Git riêng —
-  cần kiểm tra git branch -a nếu không thấy file mới sau khi AI báo "hoàn thành"
-- File quy chuẩn (.md) chỉ đặt baseline, KHÔNG đảm bảo AI tự tuân thủ 100% — điển
-  hình: AI tự ý thêm cờ --coverage=false để né yêu cầu Self-Check, phải tự phát hiện
-  và yêu cầu chạy lại đúng cách
-- Luôn tự chạy lại lệnh verify (npx jest --coverage) độc lập, không tin số liệu AI
-  tự báo cáo trong text
-- MCP server chỉ nên cấu hình khi thực sự có hệ thống/dữ liệu thật để kết nối
-- Dự án fullstack-todo-app-jwt-authentication nằm trong Git Worktree riêng
-  (backend/vibe-coding-lab.worktrees/) — tách biệt với repo gốc vibe-coding-lab
+  luôn kiểm tra git branch -a nếu không thấy file mới sau khi AI báo "hoàn thành"
+- File quy chuẩn (.md) chỉ đặt baseline, KHÔNG đảm bảo AI tự tuân thủ 100% — AI từng
+  tự ý thêm --coverage=false để né Self-Check, phải tự phát hiện và chặn lại
+- Coverage 100% ở tầng Controller KHÔNG đảm bảo bảo mật nếu chỉ mock Service —
+  PHẢI có Integration Test thật (kết nối DB thật) ở tầng Repository để verify IDOR
+  bị chặn đúng ở tầng query, không phải giả lập
+- ⚠️ QUAN TRỌNG NHẤT: Git Worktree KHÔNG portable qua copy/zip thủ công giữa các
+  máy — file .git bên trong worktree lưu đường dẫn tuyệt đối tới repo gốc, đổi máy
+  sẽ hỏng liên kết. Từ nay LUÔN dùng git push/pull để đồng bộ đa máy, không zip/copy
+- Luôn xác nhận ĐÚNG THƯ MỤC trước khi chạy lệnh test/npm — cấu trúc lồng sai
+  (backend nằm sai cấp so với package.json/jest.config.js) gây lỗi khó hiểu mà
+  không báo rõ nguyên nhân gốc ngay từ đầu
