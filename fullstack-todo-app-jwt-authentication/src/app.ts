@@ -8,7 +8,12 @@ import todoRoutes from './routes/todoRoutes';
 
 export const app = express();
 
-app.use(helmet());
+// Configure helmet with COOP allowing popups for Google Sign-In
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  })
+);
 app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());

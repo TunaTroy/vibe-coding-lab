@@ -1,5 +1,6 @@
 process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/todo_app';
 process.env.JWT_SECRET = 'test-secret';
+process.env.GOOGLE_CLIENT_ID = 'google-client-id';
 
 import jwt from 'jsonwebtoken';
 import { requireAuth } from '../middleware/requireAuth';

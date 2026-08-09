@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import GoogleLoginButton from '../components/reusable/GoogleLoginButton';
 import Button from '../components/reusable/Button';
 import Card from '../components/reusable/Card';
 import Input from '../components/reusable/Input';
@@ -7,10 +8,6 @@ import Input from '../components/reusable/Input';
 function getErrorMessage(error) {
   if (error?.status === 400) {
     return error.errors?.email?.[0] || error.errors?.password?.[0] || error.data?.message || 'Validation failed.';
-  }
-
-  if (error?.status === 401) {
-    return 'Your session has expired or you are not signed in.';
   }
 
   if (error?.status === 403) {
@@ -24,7 +21,7 @@ function getErrorMessage(error) {
   return error?.message || 'Unable to login right now.';
 }
 
-export default function LoginPage({ onLogin }) {
+export default function LoginPage({ onLogin, onGoogleLogin }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -33,7 +30,9 @@ export default function LoginPage({ onLogin }) {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    // Trim email to prevent accidental spaces
+    const trimmedValue = name === 'email' ? value.trim() : value;
+    setForm((current) => ({ ...current, [name]: trimmedValue }));
 
     if (fieldErrors[name]) {
       setFieldErrors((current) => ({ ...current, [name]: undefined }));
@@ -44,6 +43,32 @@ export default function LoginPage({ onLogin }) {
     }
   };
 
+  const handleGoogleLogin = async (idToken) => {
+    if (!onGoogleLogin) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    setFieldErrors({});
+
+    try {
+      await onGoogleLogin(idToken);
+      navigate('/todos');
+    } catch (err) {
+      // Only show error message if it's not a generic 401 from session check
+      if (err?.status === 401 && err?.message?.includes('Google authentication failed')) {
+        setError('Google authentication failed. Please try again.');
+      } else if (err?.status !== 401) {
+        setError(getErrorMessage(err));
+      } else {
+        setError('Authentication failed. Please try again.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitting(true);
@@ -51,11 +76,21 @@ export default function LoginPage({ onLogin }) {
     setFieldErrors({});
 
     try {
-      await onLogin(form);
+      // Trim values before submit for safety
+      const trimmedForm = {
+        email: form.email.trim(),
+        password: form.password.trim(),
+      };
+      await onLogin(trimmedForm);
       navigate('/todos');
     } catch (err) {
-      const message = getErrorMessage(err);
-      setError(message);
+      // Don't show "session expired" for login attempt failures
+      if (err?.status === 401) {
+        setError('Invalid email or password.');
+      } else {
+        const message = getErrorMessage(err);
+        setError(message);
+      }
       if (err?.errors) {
         setFieldErrors(err.errors);
       }
@@ -70,6 +105,16 @@ export default function LoginPage({ onLogin }) {
         <div className="mb-6 text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">Welcome back</p>
           <h1 className="mt-2 text-3xl font-bold text-slate-900">Login</h1>
+        </div>
+
+        <div className="mb-4">
+          <GoogleLoginButton onSuccess={handleGoogleLogin} disabled={submitting} />
+        </div>
+
+        <div className="mb-4 flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-xs uppercase tracking-[0.2em] text-slate-400">or</span>
+          <div className="h-px flex-1 bg-slate-200" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

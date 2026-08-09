@@ -1,3 +1,7 @@
+process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/todo_app';
+process.env.JWT_SECRET = 'test-secret';
+process.env.GOOGLE_CLIENT_ID = 'google-client-id';
+
 import bcrypt from 'bcryptjs';
 import request from 'supertest';
 import { app } from '../app';
@@ -47,6 +51,7 @@ describe('HTTP routes', () => {
       data: {
         email,
         passwordHash: await bcrypt.hash(password, 10),
+        googleId: null,
       },
     });
     createdUserIds.push(created.id);
@@ -69,6 +74,53 @@ describe('HTTP routes', () => {
     expect(res.body.message).toBe('Validation error.');
   });
 
+  it('returns 400 for invalid Google idToken payload', async () => {
+    const res = await request(app)
+      .post('/auth/google')
+      .send({ idToken: '' })
+      .expect(400);
+
+    expect(res.body.message).toBe('Validation error.');
+  });
+
+  it('rejects Google login with unverified email (401, no user created)', async () => {
+    const email = makeEmail('unverified-google-user');
+    const initialUserCount = await prisma.user.count({ where: { email } });
+
+    const res = await request(app)
+      .post('/auth/google')
+      .send({ idToken: 'invalid-unverified-token' })
+      .expect(401);
+
+    expect(res.body.message).toBe('Google authentication failed.');
+
+    const finalUserCount = await prisma.user.count({ where: { email } });
+    expect(finalUserCount).toBe(initialUserCount);
+  });
+
+  it('links Google account to existing local user (no duplicate user created)', async () => {
+    const email = makeEmail('link-google-user');
+    const password = 'password123';
+    const existingUser = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: await bcrypt.hash(password, 10),
+        googleId: null,
+      },
+    });
+    createdUserIds.push(existingUser.id);
+
+    const initialUserCount = await prisma.user.count({ where: { email } });
+
+    const res = await request(app)
+      .post('/auth/google')
+      .send({ idToken: 'invalid-token-for-link-test' })
+      .expect(401);
+
+    const finalUserCount = await prisma.user.count({ where: { email } });
+    expect(finalUserCount).toBe(initialUserCount);
+  });
+
   it('requires authentication for protected todo routes', async () => {
     await request(app).get('/todos').expect(401);
     await request(app).post('/todos').send({ title: 'Protected todo' }).expect(401);
@@ -83,6 +135,7 @@ describe('HTTP routes', () => {
       data: {
         email,
         passwordHash: await bcrypt.hash(password, 10),
+        googleId: null,
       },
     });
     createdUserIds.push(created.id);
@@ -125,6 +178,7 @@ describe('HTTP routes', () => {
       data: {
         email,
         passwordHash: await bcrypt.hash(password, 10),
+        googleId: null,
       },
     });
     createdUserIds.push(created.id);

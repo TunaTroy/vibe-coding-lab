@@ -41,12 +41,56 @@ describe('Repository integration tests', () => {
     });
   });
 
+  it('UserRepository stores and reads users by Google ID', async () => {
+    const googleId = `google-${Date.now()}`;
+    const email = `google-user-${Date.now()}@example.com`;
+    const created = await userRepository.create({
+      email,
+      passwordHash: null,
+      googleId,
+    });
+    createdUserIds.push(created.id);
+
+    const found = await userRepository.findByGoogleId(googleId);
+
+    expect(found).not.toBeNull();
+    expect(found).toMatchObject({
+      id: created.id,
+      email,
+      googleId,
+      passwordHash: null,
+    });
+  });
+
+  it('UserRepository links Google account to existing user', async () => {
+    const email = `link-user-${Date.now()}@example.com`;
+    const created = await userRepository.create({
+      email,
+      passwordHash: 'hashed-password',
+    });
+    createdUserIds.push(created.id);
+
+    const googleId = `google-link-${Date.now()}`;
+    const linked = await userRepository.linkGoogleAccount(created.id, googleId);
+
+    expect(linked).toMatchObject({
+      id: created.id,
+      email,
+      googleId,
+      passwordHash: 'hashed-password',
+    });
+
+    const foundByGoogleId = await userRepository.findByGoogleId(googleId);
+    expect(foundByGoogleId).not.toBeNull();
+    expect(foundByGoogleId?.id).toBe(created.id);
+  });
+
   it('TodoRepository only returns todos for the matching userId', async () => {
     const userA = await prisma.user.create({
-      data: { email: `user-a-${Date.now()}@example.com`, passwordHash: 'hash-a' },
+      data: { email: `user-a-${Date.now()}@example.com`, passwordHash: 'hash-a', googleId: null },
     });
     const userB = await prisma.user.create({
-      data: { email: `user-b-${Date.now()}@example.com`, passwordHash: 'hash-b' },
+      data: { email: `user-b-${Date.now()}@example.com`, passwordHash: 'hash-b', googleId: null },
     });
     createdUserIds.push(userA.id, userB.id);
 
@@ -72,7 +116,7 @@ describe('Repository integration tests', () => {
 
   it('TodoRepository updates and deletes the correct todo record', async () => {
     const user = await prisma.user.create({
-      data: { email: `user-c-${Date.now()}@example.com`, passwordHash: 'hash-c' },
+      data: { email: `user-c-${Date.now()}@example.com`, passwordHash: 'hash-c', googleId: null },
     });
     createdUserIds.push(user.id);
 

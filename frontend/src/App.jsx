@@ -22,11 +22,11 @@ export default function App() {
       <Route path="/" element={<Navigate to={auth.user ? '/todos' : '/login'} replace />} />
       <Route
         path="/login"
-        element={auth.user ? <Navigate to="/todos" replace /> : <LoginPage onLogin={auth.login} />}
+        element={auth.user ? <Navigate to="/todos" replace /> : <LoginPage onLogin={auth.login} onGoogleLogin={auth.loginWithGoogle} />}
       />
       <Route
         path="/register"
-        element={auth.user ? <Navigate to="/todos" replace /> : <RegisterPage onRegister={auth.register} />}
+        element={auth.user ? <Navigate to="/todos" replace /> : <RegisterPage onRegister={auth.register} onGoogleLogin={auth.loginWithGoogle} />}
       />
       <Route
         path="/todos"

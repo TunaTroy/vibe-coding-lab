@@ -8,5 +8,7 @@ const authController = new AuthController(new AuthService(new UserRepository()))
 
 router.post('/register', authController.register);
 router.post('/login', authController.login);
+router.post('/google', authController.googleLogin);
+router.post('/logout', authController.logout);
 
 export default router;

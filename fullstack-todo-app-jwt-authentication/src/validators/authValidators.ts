@@ -10,6 +10,10 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 
+export const googleLoginSchema = z.object({
+  idToken: z.string().trim().min(1, 'Google ID token is required.'),
+});
+
 export const createTodoSchema = z.object({
   title: z.string().trim().min(1, 'Title is required.'),
 });

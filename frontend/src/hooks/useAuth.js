@@ -11,11 +11,8 @@ export function useAuth() {
       await api.request('/todos');
       setUser({ authenticated: true });
     } catch (error) {
-      if (error.status === 401) {
-        setUser(null);
-        return;
-      }
-
+      // Clear user state on any auth failure (including expired tokens)
+      // The route guard in App.jsx will handle redirecting to /login
       setUser(null);
     } finally {
       setLoading(false);
@@ -46,9 +43,28 @@ export function useAuth() {
     return response;
   }, []);
 
-  const logout = useCallback(() => {
-    setUser(null);
+  const loginWithGoogle = useCallback(async (idToken) => {
+    const response = await api.request('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+    });
+
+    setUser(response.user || { authenticated: true });
+    return response;
   }, []);
 
-  return { user, loading, checkAuth, login, register, logout };
+  const logout = useCallback(async () => {
+    try {
+      await api.request('/auth/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      // Continue with local logout even if backend request fails
+      console.error('Logout request failed:', error);
+    } finally {
+      setUser(null);
+    }
+  }, []);
+
+  return { user, loading, checkAuth, login, register, loginWithGoogle, logout };
 }

@@ -132,8 +132,8 @@ export default function TodoPage({ user, onLogout }) {
     }
   };
 
-  const handleLogout = () => {
-    onLogout();
+  const handleLogout = async () => {
+    await onLogout();
     navigate('/login');
   };
 
