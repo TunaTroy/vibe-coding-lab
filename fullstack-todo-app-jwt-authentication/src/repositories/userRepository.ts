@@ -1,9 +1,11 @@
 import { prisma } from '../config/prisma';
+import { Role } from '@prisma/client';
 
 export interface CreateUserInput {
   email: string;
   passwordHash?: string | null;
   googleId?: string | null;
+  role?: Role;
 }
 
 export interface UserRecord {
@@ -11,6 +13,7 @@ export interface UserRecord {
   email: string;
   passwordHash: string | null;
   googleId?: string | null;
+  role: Role;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,6 +33,7 @@ export class UserRepository {
         email: input.email,
         passwordHash: input.passwordHash ?? null,
         googleId: input.googleId ?? null,
+        role: input.role ?? Role.STUDENT,
       },
     });
   }

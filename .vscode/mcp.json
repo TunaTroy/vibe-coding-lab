@@ -10,4 +10,4 @@
                 "postgresql://mcp_readonly:Dattuna0909%24@localhost:5432/todo_app"]
     }
   }
-}
+} 

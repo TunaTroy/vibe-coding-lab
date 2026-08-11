@@ -4,6 +4,7 @@ process.env.GOOGLE_CLIENT_ID = 'google-client-id';
 
 import jwt from 'jsonwebtoken';
 import { requireAuth } from '../middleware/requireAuth';
+import { Role } from '@prisma/client';
 
 describe('requireAuth', () => {
   it('returns 401 when no token is provided', () => {
@@ -29,14 +30,14 @@ describe('requireAuth', () => {
   });
 
   it('attaches the user payload for valid tokens', () => {
-    const token = jwt.sign({ sub: 'u1', email: 'test@example.com' }, 'test-secret');
+    const token = jwt.sign({ sub: 'u1', email: 'test@example.com', role: Role.STUDENT }, 'test-secret');
     const req = { cookies: { token } } as any;
     const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as any;
     const next = jest.fn();
 
     requireAuth(req, res, next);
 
-    expect(req.user).toEqual({ id: 'u1', email: 'test@example.com' });
+    expect(req.user).toEqual({ id: 'u1', email: 'test@example.com', role: Role.STUDENT });
     expect(next).toHaveBeenCalled();
   });
 });

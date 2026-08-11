@@ -3,6 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 import { UserRepository } from '../repositories/userRepository';
+import { Role } from '@prisma/client';
 
 export interface RegisterInput {
   email: string;
@@ -18,6 +19,7 @@ export interface AuthResult {
   user: {
     id: string;
     email: string;
+    role: Role;
   };
   token: string;
 }
@@ -25,17 +27,18 @@ export interface AuthResult {
 export class AuthService {
   constructor(private readonly userRepository: UserRepository) {}
 
-  private createToken(user: { id: string; email: string }): string {
-    return jwt.sign({ sub: user.id, email: user.email }, env.JWT_SECRET, {
+  private createToken(user: { id: string; email: string; role: Role }): string {
+    return jwt.sign({ sub: user.id, email: user.email, role: user.role }, env.JWT_SECRET, {
       expiresIn: '8h', // 8 hour session timeout for family use case
     });
   }
 
-  private createAuthResult(user: { id: string; email: string }): AuthResult {
+  private createAuthResult(user: { id: string; email: string; role: Role }): AuthResult {
     return {
       user: {
         id: user.id,
         email: user.email,
+        role: user.role,
       },
       token: this.createToken(user),
     };
@@ -124,6 +127,7 @@ export class AuthService {
       email,
       passwordHash: null,
       googleId,
+      role: Role.STUDENT,
     });
 
     return this.createAuthResult(createdUser);

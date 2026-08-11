@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { AuthService } from '../services/authService';
 import { googleLoginSchema, loginSchema, registerSchema } from '../validators/authValidators';
+import { Role } from '@prisma/client';
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -26,7 +27,7 @@ export class AuthController {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           message: 'Validation error.',
-          errors: error.flatten().fieldErrors,
+          errors: (error as z.ZodError).flatten().fieldErrors,
         });
       }
 
@@ -54,7 +55,7 @@ export class AuthController {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           message: 'Validation error.',
-          errors: error.flatten().fieldErrors,
+          errors: (error as z.ZodError).flatten().fieldErrors,
         });
       }
 
@@ -82,7 +83,7 @@ export class AuthController {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           message: 'Validation error.',
-          errors: error.flatten().fieldErrors,
+          errors: (error as z.ZodError).flatten().fieldErrors,
         });
       }
 
@@ -106,6 +107,24 @@ export class AuthController {
 
       return res.status(200).json({
         message: 'Logged out successfully.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getMe = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Unauthorized.' });
+      }
+
+      return res.status(200).json({
+        user: {
+          id: req.user.id,
+          email: req.user.email,
+          role: req.user.role,
+        },
       });
     } catch (error) {
       next(error);

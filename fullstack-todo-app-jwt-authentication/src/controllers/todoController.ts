@@ -34,7 +34,7 @@ export class TodoController {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           message: 'Validation error.',
-          errors: error.flatten().fieldErrors,
+          errors: (error as z.ZodError).flatten().fieldErrors,
         });
       }
 
@@ -57,7 +57,7 @@ export class TodoController {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           message: 'Validation error.',
-          errors: error.flatten().fieldErrors,
+          errors: (error as z.ZodError).flatten().fieldErrors,
         });
       }
 

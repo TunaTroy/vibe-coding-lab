@@ -36,4 +36,122 @@
 2026-08-05 11:55:47.890 +07 [23872] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
 2026-08-05 11:55:47.890 +07 [23872] LOG:  terminating any other active server processes
 2026-08-05 11:55:47.923 +07 [23872] LOG:  received fast shutdown request
-^C
+^C2026-08-10 13:34:47.337 +07 [14596] FATAL:  pre-existing shared memory block is still in use
+2026-08-10 13:34:47.337 +07 [14596] HINT:  Check if there are any old server processes still running, and terminate them.
+2026-08-10 13:34:47.337 +07 [14596] LOG:  database system is shut down
+2026-08-10 13:35:51.363 +07 [13456] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35227, 64-bit
+2026-08-10 13:35:51.367 +07 [13456] LOG:  listening on IPv6 address "::1", port 5432
+2026-08-10 13:35:51.367 +07 [13456] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-08-10 13:35:51.441 +07 [8520] LOG:  database system was interrupted; last known up at 2026-08-10 13:25:34 +07
+2026-08-10 13:35:51.813 +07 [8520] LOG:  database system was not properly shut down; automatic recovery in progress
+2026-08-10 13:35:51.823 +07 [8520] LOG:  invalid record length at 0/672D868: expected at least 24, got 0
+2026-08-10 13:35:51.823 +07 [8520] LOG:  redo is not required
+2026-08-10 13:35:51.844 +07 [14596] LOG:  checkpoint starting: end-of-recovery immediate wait
+2026-08-10 13:35:51.885 +07 [14596] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.011 s, total=0.051 s; sync files=2, longest=0.007 s, average=0.006 s; distance=0 kB, estimate=0 kB; lsn=0/672D868, redo lsn=0/672D868
+2026-08-10 13:35:51.919 +07 [13456] LOG:  database system is ready to accept connections
+2026-08-10 13:40:51.890 +07 [14596] LOG:  checkpoint starting: time
+2026-08-10 13:40:52.264 +07 [14596] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.325 s, sync=0.022 s, total=0.374 s; sync files=4, longest=0.008 s, average=0.006 s; distance=10 kB, estimate=10 kB; lsn=0/6730420, redo lsn=0/67303C8
+2026-08-10 14:00:54.199 +07 [12424] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35227, 64-bit
+2026-08-10 14:00:54.202 +07 [12424] LOG:  listening on IPv6 address "::1", port 5432
+2026-08-10 14:00:54.202 +07 [12424] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-08-10 14:00:54.340 +07 [2884] LOG:  database system was interrupted; last known up at 2026-08-10 13:40:52 +07
+2026-08-10 14:00:58.917 +07 [2884] LOG:  database system was not properly shut down; automatic recovery in progress
+2026-08-10 14:00:58.929 +07 [2884] LOG:  redo starts at 0/67303C8
+2026-08-10 14:00:58.929 +07 [2884] LOG:  invalid record length at 0/67304D0: expected at least 24, got 0
+2026-08-10 14:00:58.929 +07 [2884] LOG:  redo done at 0/6730498 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+2026-08-10 14:00:58.943 +07 [11004] LOG:  checkpoint starting: end-of-recovery immediate wait
+2026-08-10 14:00:58.981 +07 [11004] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.012 s, total=0.047 s; sync files=2, longest=0.007 s, average=0.006 s; distance=0 kB, estimate=0 kB; lsn=0/67304D0, redo lsn=0/67304D0
+2026-08-10 14:00:59.018 +07 [12424] LOG:  database system is ready to accept connections
+2026-08-10 14:19:39.685 +07 [7416] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-08-10 14:20:59.005 +07 [11004] LOG:  checkpoint starting: time
+2026-08-10 14:20:59.737 +07 [11004] LOG:  checkpoint complete: wrote 6 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.656 s, sync=0.039 s, total=0.733 s; sync files=7, longest=0.008 s, average=0.006 s; distance=17 kB, estimate=17 kB; lsn=0/6734C90, redo lsn=0/6734C38
+2026-08-10 15:25:19.533 +07 [12424] LOG:  client backend (PID 12528) was terminated by exception 0xC000013A
+2026-08-10 15:25:19.533 +07 [12424] DETAIL:  Failed process was running: SELECT rel.oid, rel.relname AS name,
+	    (SELECT count(*) FROM pg_catalog.pg_trigger WHERE tgrelid=rel.oid AND tgisinternal = FALSE) AS triggercount,
+	    (SELECT count(*) FROM pg_catalog.pg_trigger WHERE tgrelid=rel.oid AND tgisinternal = FALSE AND tgenabled = 'O') AS has_enable_triggers,
+	    (CASE WHEN rel.relkind = 'p' THEN true ELSE false END) AS is_partitioned,
+	    (SELECT count(1) FROM pg_catalog.pg_inherits WHERE inhrelid=rel.oid LIMIT 1) as is_inherits,
+	    (SELECT count(1) FROM pg_catalog.pg_inherits WHERE inhparent=rel.oid LIMIT 1) as is_inherited,
+	    des.description
+	FROM pg_catalog.pg_class rel
+	    LEFT OUTER JOIN pg_catalog.pg_description des ON (des.objoid=rel.oid AND des.objsubid=0 AND des.classoid='pg_class'::regclass)
+	    WHERE rel.relkind IN ('r','s','t','p') AND rel.relnamespace = 2200::oid
+	    AND NOT rel.relispartition
+	        ORDER BY rel.relname;
+2026-08-10 15:25:19.533 +07 [12424] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2026-08-10 15:25:19.534 +07 [12424] LOG:  terminating any other active server processes
+2026-08-10 15:25:19.554 +07 [12424] LOG:  received fast shutdown request
+^C2026-08-11 10:21:26.968 +07 [8412] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35227, 64-bit
+2026-08-11 10:21:26.972 +07 [8412] LOG:  listening on IPv6 address "::1", port 5432
+2026-08-11 10:21:26.972 +07 [8412] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-08-11 10:21:27.084 +07 [13652] LOG:  database system was interrupted; last known up at 2026-08-10 14:20:59 +07
+2026-08-11 10:21:31.158 +07 [13652] LOG:  database system was not properly shut down; automatic recovery in progress
+2026-08-11 10:21:31.171 +07 [13652] LOG:  redo starts at 0/6734C38
+2026-08-11 10:21:31.171 +07 [13652] LOG:  invalid record length at 0/6734D40: expected at least 24, got 0
+2026-08-11 10:21:31.171 +07 [13652] LOG:  redo done at 0/6734D08 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+2026-08-11 10:21:31.189 +07 [2592] LOG:  checkpoint starting: end-of-recovery immediate wait
+2026-08-11 10:21:31.256 +07 [2592] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.011 s, total=0.077 s; sync files=2, longest=0.007 s, average=0.006 s; distance=0 kB, estimate=0 kB; lsn=0/6734D40, redo lsn=0/6734D40
+2026-08-11 10:21:31.296 +07 [8412] LOG:  database system is ready to accept connections
+2026-08-11 10:46:35.703 +07 [11884] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:35.703 +07 [11884] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:35.775 +07 [11884] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:35.775 +07 [11884] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:35.782 +07 [11884] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:35.782 +07 [11884] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:35.787 +07 [11884] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:35.787 +07 [11884] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:35.801 +07 [11884] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:35.801 +07 [11884] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:38.029 +07 [13824] ERROR:  column users.role does not exist at character 121
+2026-08-11 10:46:38.029 +07 [13824] STATEMENT:  SELECT "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at" FROM "public"."users" WHERE ("public"."users"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+2026-08-11 10:46:38.197 +07 [13824] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:38.197 +07 [13824] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:38.635 +07 [13824] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:38.635 +07 [13824] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:38.749 +07 [13824] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:38.749 +07 [13824] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:38.848 +07 [13824] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:38.848 +07 [13824] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:38.953 +07 [13824] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:38.953 +07 [13824] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:39.052 +07 [13824] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:39.052 +07 [13824] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:39.142 +07 [13824] ERROR:  column "role" of relation "users" does not exist at character 72
+2026-08-11 10:46:39.142 +07 [13824] STATEMENT:  INSERT INTO "public"."users" ("id","email","password_hash","google_id","role","created_at","updated_at") VALUES ($1,$2,$3,$4,CAST($5::text AS "public"."Role"),$6,$7) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."password_hash", "public"."users"."google_id", "public"."users"."role"::text, "public"."users"."created_at", "public"."users"."updated_at"
+2026-08-11 10:46:57.664 +07 [2592] LOG:  checkpoint starting: immediate force wait
+2026-08-11 10:46:57.732 +07 [2592] LOG:  checkpoint complete: wrote 4 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.007 s, sync=0.023 s, total=0.069 s; sync files=5, longest=0.007 s, average=0.005 s; distance=4711 kB, estimate=4711 kB; lsn=0/6BCEB88, redo lsn=0/6BCEB30
+2026-08-11 10:46:58.592 +07 [2592] LOG:  checkpoint starting: immediate force wait
+2026-08-11 10:46:58.670 +07 [2592] LOG:  checkpoint complete: wrote 6 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 1 recycled; write=0.009 s, sync=0.030 s, total=0.079 s; sync files=6, longest=0.007 s, average=0.005 s; distance=4723 kB, estimate=4723 kB; lsn=0/706B7B0, redo lsn=0/706B758
+2026-08-11 10:46:59.242 +07 [2592] LOG:  checkpoint starting: immediate force wait
+2026-08-11 10:46:59.294 +07 [2592] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.006 s, sync=0.019 s, total=0.053 s; sync files=4, longest=0.007 s, average=0.005 s; distance=4707 kB, estimate=4721 kB; lsn=0/7504728, redo lsn=0/75046D0
+2026-08-11 10:46:59.957 +07 [2592] LOG:  checkpoint starting: immediate force wait
+2026-08-11 10:47:00.011 +07 [2592] LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.006 s, sync=0.019 s, total=0.054 s; sync files=4, longest=0.007 s, average=0.005 s; distance=4708 kB, estimate=4720 kB; lsn=0/799D7A0, redo lsn=0/799D748
+2026-08-11 10:47:00.139 +07 [14912] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-08-11 10:51:59.016 +07 [2592] LOG:  checkpoint starting: time
+2026-08-11 10:52:03.265 +07 [2592] LOG:  checkpoint complete: wrote 37 buffers (0.2%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=4.062 s, sync=0.163 s, total=4.249 s; sync files=33, longest=0.011 s, average=0.005 s; distance=125 kB, estimate=4260 kB; lsn=0/79BCF20, redo lsn=0/79BCE90
+2026-08-11 11:06:59.298 +07 [2592] LOG:  checkpoint starting: time
+2026-08-11 11:06:59.453 +07 [2592] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.115 s, sync=0.007 s, total=0.155 s; sync files=1, longest=0.007 s, average=0.007 s; distance=6 kB, estimate=3835 kB; lsn=0/79BEAC0, redo lsn=0/79BEA68
+2026-08-11 11:11:59.466 +07 [2592] LOG:  checkpoint starting: time
+2026-08-11 11:11:59.632 +07 [2592] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.106 s, sync=0.013 s, total=0.166 s; sync files=1, longest=0.013 s, average=0.013 s; distance=1 kB, estimate=3452 kB; lsn=0/79BF2B8, redo lsn=0/79BF260
+2026-08-11 11:21:59.663 +07 [2592] LOG:  checkpoint starting: time
+2026-08-11 11:22:00.182 +07 [2592] LOG:  checkpoint complete: wrote 4 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.444 s, sync=0.024 s, total=0.519 s; sync files=5, longest=0.007 s, average=0.005 s; distance=12 kB, estimate=3108 kB; lsn=0/79C25A8, redo lsn=0/79C2550
+2026-08-11 11:22:10.390 +07 [2592] LOG:  shutting down
+2026-08-11 11:22:10.390 +07 [8412] LOG:  received fast shutdown request
+2026-08-11 11:22:10.399 +07 [15764] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-08-11 11:22:10.404 +07 [8412] LOG:  aborting any active transactions
+2026-08-11 11:22:10.405 +07 [2592] LOG:  checkpoint starting: shutdown immediate
+2026-08-11 11:22:10.405 +07 [11076] FATAL:  terminating connection due to administrator command
+2026-08-11 11:22:10.405 +07 [5008] FATAL:  terminating connection due to administrator command
+2026-08-11 11:22:10.405 +07 [17900] FATAL:  terminating connection due to administrator command
+2026-08-11 11:22:10.405 +07 [5356] FATAL:  terminating connection due to administrator command
+2026-08-11 11:22:10.405 +07 [11328] FATAL:  terminating connection due to administrator command
+2026-08-11 11:22:10.405 +07 [3088] FATAL:  terminating connection due to administrator command
+2026-08-11 11:22:10.419 +07 [14132] ERROR:  canceling statement due to user request
+2026-08-11 11:22:10.438 +07 [2592] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.001 s, total=0.047 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=2797 kB; lsn=0/79C2658, redo lsn=0/79C2658
+2026-08-11 11:22:10.439 +07 [8412] LOG:  WAL was shut down unexpectedly
+2026-08-11 11:22:10.452 +07 [8412] LOG:  background worker "logical replication launcher" (PID 14132) exited with exit code 1
+2026-08-11 11:22:10.478 +07 [8412] LOG:  abnormal database system shutdown
+2026-08-11 11:22:10.482 +07 [8412] LOG:  database system is shut down

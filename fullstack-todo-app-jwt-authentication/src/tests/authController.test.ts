@@ -3,11 +3,12 @@ process.env.JWT_SECRET = 'test-secret';
 process.env.GOOGLE_CLIENT_ID = 'google-client-id';
 
 import { AuthController } from '../controllers/authController';
+import { Role } from '@prisma/client';
 
 describe('AuthController', () => {
   it('registers a user and sets a cookie', async () => {
     const authService = {
-      register: jest.fn().mockResolvedValue({ user: { id: 'u1', email: 'test@example.com' }, token: 'token-1' }),
+      register: jest.fn().mockResolvedValue({ user: { id: 'u1', email: 'test@example.com', role: Role.STUDENT }, token: 'token-1' }),
     };
     const controller = new AuthController(authService as any);
 
@@ -28,7 +29,7 @@ describe('AuthController', () => {
 
   it('logs in a user and sets a cookie', async () => {
     const authService = {
-      login: jest.fn().mockResolvedValue({ user: { id: 'u1', email: 'test@example.com' }, token: 'token-1' }),
+      login: jest.fn().mockResolvedValue({ user: { id: 'u1', email: 'test@example.com', role: Role.STUDENT }, token: 'token-1' }),
     };
     const controller = new AuthController(authService as any);
 
@@ -49,7 +50,7 @@ describe('AuthController', () => {
 
   it('logs in a user with Google and sets a cookie', async () => {
     const authService = {
-      loginWithGoogle: jest.fn().mockResolvedValue({ user: { id: 'u1', email: 'test@example.com' }, token: 'token-1' }),
+      loginWithGoogle: jest.fn().mockResolvedValue({ user: { id: 'u1', email: 'test@example.com', role: Role.STUDENT }, token: 'token-1' }),
     };
     const controller = new AuthController(authService as any);
 
@@ -153,5 +154,37 @@ describe('AuthController', () => {
     await controller.login(req, res, next);
 
     expect(next).toHaveBeenCalledWith(error);
+  });
+
+  it('returns 401 when getMe is called without authenticated user', async () => {
+    const controller = new AuthController({} as any);
+    const req = {} as any;
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as any;
+    const next = jest.fn();
+
+    await controller.getMe(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Unauthorized.' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('returns user info with role when getMe is called with authenticated user', async () => {
+    const controller = new AuthController({} as any);
+    const req = { user: { id: 'u1', email: 'test@example.com', role: Role.ADMIN } } as any;
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as any;
+    const next = jest.fn();
+
+    await controller.getMe(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      user: {
+        id: 'u1',
+        email: 'test@example.com',
+        role: Role.ADMIN,
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
   });
 });

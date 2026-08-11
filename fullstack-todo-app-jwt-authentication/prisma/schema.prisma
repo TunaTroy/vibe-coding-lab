@@ -7,11 +7,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  STUDENT
+  ADMIN
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String?  @map("password_hash")
   googleId     String?  @unique @map("google_id")
+  role         Role     @default(STUDENT)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
   todos        Todo[]

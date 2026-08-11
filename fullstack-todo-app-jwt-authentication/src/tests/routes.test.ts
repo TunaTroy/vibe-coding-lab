@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import request from 'supertest';
 import { app } from '../app';
 import { prisma } from '../config/prisma';
+import { Role } from '@prisma/client';
 
 describe('HTTP routes', () => {
   const createdUserIds: string[] = [];
@@ -38,9 +39,11 @@ describe('HTTP routes', () => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (user) {
       createdUserIds.push(user.id);
+      expect(user.role).toBe(Role.STUDENT);
     }
 
     expect(res.body.message).toBe('Registered successfully.');
+    expect(res.body.user.role).toBe(Role.STUDENT);
     expect(res.headers['set-cookie']).toEqual(expect.arrayContaining([expect.stringContaining('token=')]));
   });
 
@@ -52,6 +55,7 @@ describe('HTTP routes', () => {
         email,
         passwordHash: await bcrypt.hash(password, 10),
         googleId: null,
+        role: Role.STUDENT,
       },
     });
     createdUserIds.push(created.id);
@@ -62,6 +66,7 @@ describe('HTTP routes', () => {
       .expect(200);
 
     expect(res.body.message).toBe('Logged in successfully.');
+    expect(res.body.user.role).toBe(Role.STUDENT);
     expect(res.headers['set-cookie']).toEqual(expect.arrayContaining([expect.stringContaining('token=')]));
   });
 
@@ -106,6 +111,7 @@ describe('HTTP routes', () => {
         email,
         passwordHash: await bcrypt.hash(password, 10),
         googleId: null,
+        role: Role.STUDENT,
       },
     });
     createdUserIds.push(existingUser.id);
@@ -136,6 +142,7 @@ describe('HTTP routes', () => {
         email,
         passwordHash: await bcrypt.hash(password, 10),
         googleId: null,
+        role: Role.STUDENT,
       },
     });
     createdUserIds.push(created.id);
@@ -179,6 +186,7 @@ describe('HTTP routes', () => {
         email,
         passwordHash: await bcrypt.hash(password, 10),
         googleId: null,
+        role: Role.STUDENT,
       },
     });
     createdUserIds.push(created.id);
@@ -197,5 +205,79 @@ describe('HTTP routes', () => {
 
     const deleteRes = await agent.delete(`/todos/${todoId}`).expect(200);
     expect(deleteRes.body.message).toBe('Todo deleted.');
+  });
+
+  it('GET /auth/me returns user info with role when authenticated', async () => {
+    const email = makeEmail('me-user');
+    const password = 'password123';
+    const agent = request.agent(app);
+
+    const created = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: await bcrypt.hash(password, 10),
+        googleId: null,
+        role: Role.ADMIN,
+      },
+    });
+    createdUserIds.push(created.id);
+
+    await agent.post('/auth/login').send({ email, password }).expect(200);
+
+    const meRes = await agent.get('/auth/me').expect(200);
+    expect(meRes.body.user).toMatchObject({
+      id: created.id,
+      email: created.email,
+      role: Role.ADMIN,
+    });
+  });
+
+  it('GET /auth/me returns 401 when not authenticated', async () => {
+    await request(app).get('/auth/me').expect(401);
+  });
+
+  it('GET /api/admin/test returns 403 for STUDENT role', async () => {
+    const email = makeEmail('student-user');
+    const password = 'password123';
+    const agent = request.agent(app);
+
+    const created = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: await bcrypt.hash(password, 10),
+        googleId: null,
+        role: Role.STUDENT,
+      },
+    });
+    createdUserIds.push(created.id);
+
+    await agent.post('/auth/login').send({ email, password }).expect(200);
+
+    await agent.get('/api/admin/test').expect(403);
+  });
+
+  it('GET /api/admin/test returns 200 for ADMIN role', async () => {
+    const email = makeEmail('admin-user');
+    const password = 'password123';
+    const agent = request.agent(app);
+
+    const created = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: await bcrypt.hash(password, 10),
+        googleId: null,
+        role: Role.ADMIN,
+      },
+    });
+    createdUserIds.push(created.id);
+
+    await agent.post('/auth/login').send({ email, password }).expect(200);
+
+    const res = await agent.get('/api/admin/test').expect(200);
+    expect(res.body.message).toBe('Admin access granted.');
+  });
+
+  it('GET /api/admin/test returns 401 when not authenticated', async () => {
+    await request(app).get('/api/admin/test').expect(401);
   });
 });

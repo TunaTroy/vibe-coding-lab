@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
+import { Role } from '@prisma/client';
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies?.token;
@@ -10,8 +11,8 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   }
 
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET) as { sub: string; email: string };
-    req.user = { id: decoded.sub, email: decoded.email };
+    const decoded = jwt.verify(token, env.JWT_SECRET) as { sub: string; email: string; role: Role };
+    req.user = { id: decoded.sub, email: decoded.email, role: decoded.role };
     return next();
   } catch (error) {
     // Token is invalid or expired
