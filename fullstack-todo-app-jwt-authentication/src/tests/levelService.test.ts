@@ -18,6 +18,8 @@ const mockLevelRepository = {
   updateLevelProgress: jest.fn(),
   createCoinTransaction: jest.fn(),
   updateUserCoinBalance: jest.fn(),
+  findAllLevels: jest.fn(),
+  findAllLevelProgressByUserId: jest.fn(),
 };
 
 jest.mock('../repositories/levelRepository', () => ({
@@ -674,6 +676,163 @@ describe('LevelService (unit tests)', () => {
           stars: 1, // Should NOT update stars (existing is 3)
         })
       );
+    });
+  });
+
+  describe('getAllLevelsWithProgress', () => {
+    it('should return all levels with progress for new user (no progress)', async () => {
+      const mockLevels = [
+        { id: 'level1', order: 1, tense: { name: 'Present Simple' } },
+        { id: 'level2', order: 2, tense: { name: 'Past Simple' } },
+        { id: 'level3', order: 3, tense: { name: 'Future Simple' } },
+      ];
+
+      mockLevelRepository.findAllLevels.mockResolvedValue(mockLevels);
+      mockLevelRepository.findAllLevelProgressByUserId.mockResolvedValue([]);
+
+      const result = await levelService.getAllLevelsWithProgress('user1');
+
+      expect(result).toHaveLength(3);
+      expect(result[0]).toMatchObject({
+        id: 'level1',
+        order: 1,
+        tenseName: 'Present Simple',
+        isUnlocked: true, // Level 1 always unlocked
+        starsEarned: 0,
+      });
+      expect(result[1]).toMatchObject({
+        id: 'level2',
+        order: 2,
+        tenseName: 'Past Simple',
+        isUnlocked: false, // Locked because level 1 not passed
+        starsEarned: 0,
+      });
+      expect(result[2]).toMatchObject({
+        id: 'level3',
+        order: 3,
+        tenseName: 'Future Simple',
+        isUnlocked: false, // Locked because level 2 not passed
+        starsEarned: 0,
+      });
+    });
+
+    it('should unlock level 2 when level 1 is passed', async () => {
+      const mockLevels = [
+        { id: 'level1', order: 1, tense: { name: 'Present Simple' } },
+        { id: 'level2', order: 2, tense: { name: 'Past Simple' } },
+      ];
+
+      const mockProgress = [
+        {
+          levelId: 'level1',
+          stars: 3,
+          passedAt: new Date(),
+        },
+      ];
+
+      mockLevelRepository.findAllLevels.mockResolvedValue(mockLevels);
+      mockLevelRepository.findAllLevelProgressByUserId.mockResolvedValue(mockProgress);
+
+      const result = await levelService.getAllLevelsWithProgress('user1');
+
+      expect(result[0].isUnlocked).toBe(true);
+      expect(result[0].starsEarned).toBe(3);
+      expect(result[1].isUnlocked).toBe(true); // Unlocked because level 1 passed
+      expect(result[1].starsEarned).toBe(0);
+    });
+
+    it('should unlock level 3 when level 2 is passed', async () => {
+      const mockLevels = [
+        { id: 'level1', order: 1, tense: { name: 'Present Simple' } },
+        { id: 'level2', order: 2, tense: { name: 'Past Simple' } },
+        { id: 'level3', order: 3, tense: { name: 'Future Simple' } },
+      ];
+
+      const mockProgress = [
+        {
+          levelId: 'level1',
+          stars: 3,
+          passedAt: new Date(),
+        },
+        {
+          levelId: 'level2',
+          stars: 2,
+          passedAt: new Date(),
+        },
+      ];
+
+      mockLevelRepository.findAllLevels.mockResolvedValue(mockLevels);
+      mockLevelRepository.findAllLevelProgressByUserId.mockResolvedValue(mockProgress);
+
+      const result = await levelService.getAllLevelsWithProgress('user1');
+
+      expect(result[0].isUnlocked).toBe(true);
+      expect(result[1].isUnlocked).toBe(true);
+      expect(result[2].isUnlocked).toBe(true); // Unlocked because level 2 passed
+    });
+
+    it('should keep level 2 locked if level 1 played but not passed', async () => {
+      const mockLevels = [
+        { id: 'level1', order: 1, tense: { name: 'Present Simple' } },
+        { id: 'level2', order: 2, tense: { name: 'Past Simple' } },
+      ];
+
+      const mockProgress = [
+        {
+          levelId: 'level1',
+          stars: 0,
+          passedAt: null, // Played but not passed
+        },
+      ];
+
+      mockLevelRepository.findAllLevels.mockResolvedValue(mockLevels);
+      mockLevelRepository.findAllLevelProgressByUserId.mockResolvedValue(mockProgress);
+
+      const result = await levelService.getAllLevelsWithProgress('user1');
+
+      expect(result[0].isUnlocked).toBe(true);
+      expect(result[1].isUnlocked).toBe(false); // Still locked because level 1 not passed
+    });
+
+    it('should handle missing previous level gracefully', async () => {
+      const mockLevels = [
+        { id: 'level2', order: 2, tense: { name: 'Past Simple' } }, // Missing level 1
+      ];
+
+      mockLevelRepository.findAllLevels.mockResolvedValue(mockLevels);
+      mockLevelRepository.findAllLevelProgressByUserId.mockResolvedValue([]);
+
+      const result = await levelService.getAllLevelsWithProgress('user1');
+
+      expect(result[0].isUnlocked).toBe(false); // Locked because no previous level
+    });
+
+    it('should calculate starsEarned correctly from progress', async () => {
+      const mockLevels = [
+        { id: 'level1', order: 1, tense: { name: 'Present Simple' } },
+        { id: 'level2', order: 2, tense: { name: 'Past Simple' } },
+      ];
+
+      const mockProgress = [
+        {
+          levelId: 'level1',
+          stars: 2,
+          passedAt: new Date(),
+        },
+        {
+          levelId: 'level2',
+          stars: 1,
+          passedAt: new Date(),
+        },
+      ];
+
+      mockLevelRepository.findAllLevels.mockResolvedValue(mockLevels);
+      mockLevelRepository.findAllLevelProgressByUserId.mockResolvedValue(mockProgress);
+
+      const result = await levelService.getAllLevelsWithProgress('user1');
+
+      expect(result[0].starsEarned).toBe(2);
+      expect(result[1].starsEarned).toBe(1);
     });
   });
 });

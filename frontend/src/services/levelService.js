@@ -14,3 +14,7 @@ export async function submitLevel(levelId, answers) {
     body: JSON.stringify({ levelId, answers }),
   });
 }
+
+export async function fetchAllLevels() {
+  return api.request('/api/levels');
+}

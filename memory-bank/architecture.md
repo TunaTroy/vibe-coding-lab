@@ -1,7 +1,7 @@
 # Kiến trúc hệ thống — Vibe Coding Lab
 
 ## Quyết định đã chốt
-- Backend: Node.js thuần (JavaScript, CommonJS module.exports) — chưa dùng TypeScript
+- Backend: Node.js thuần (JavaScript, CommonJS module.exports) — đã dùng TypeScript
 - Testing: Jest, bắt buộc đạt 100% Branch coverage cho mỗi file business logic
 - Công cụ AI chính: VS Code Agent (GitHub Copilot) — quy chuẩn tại
   .github/copilot-instructions.md

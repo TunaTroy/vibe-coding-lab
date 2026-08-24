@@ -15,7 +15,7 @@ export default function Input({
 
   return (
     <label className="block w-full">
-      {label ? <span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span> : null}
+      {label ? <span className="mb-1.5 block text-sm font-bold uppercase tracking-wider text-[#F4E9CE]">{label}</span> : null}
       <div className="relative">
         <input
           type={isPassword && showPassword ? 'text' : type}
@@ -24,15 +24,15 @@ export default function Input({
           onChange={onChange}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className={`w-full rounded-md border px-3 py-2.5 pr-10 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${
-            error ? 'border-rose-300 focus:ring-rose-200' : 'border-slate-300 focus:ring-sky-200'
+          className={`w-full rounded-lg border px-4 py-3 pr-10 text-sm text-[#F4E9CE] placeholder:text-[#F4E9CE]/40 bg-[#1a1a1a]/80 focus:outline-none focus:ring-2 focus:ring-[#F0C040]/50 ${
+            error ? 'border-[#C8102E] focus:ring-[#C8102E]/30' : 'border-[#F0C040]/30 focus:border-[#F0C040]'
           }`}
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#F0C040]/60 hover:text-[#F0C040] focus:outline-none"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? (
@@ -50,7 +50,7 @@ export default function Input({
           </button>
         )}
       </div>
-      {error ? <span className="mt-1 block text-xs text-rose-600">{error}</span> : null}
+      {error ? <span className="mt-1 block text-xs text-[#C8102E] font-semibold">{error}</span> : null}
     </label>
   );
 }

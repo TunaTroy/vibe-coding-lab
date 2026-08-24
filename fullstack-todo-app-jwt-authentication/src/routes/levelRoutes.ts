@@ -8,6 +8,7 @@ const router = Router();
 const levelController = new LevelController(new LevelService(new LevelRepository()));
 
 router.get('/first', requireAuth, levelController.getFirstLevel);
+router.get('/', requireAuth, levelController.getAllLevels);
 router.get('/:id/questions', requireAuth, levelController.getLevelQuestions);
 router.post('/:id/submit', requireAuth, levelController.submitLevel);
 

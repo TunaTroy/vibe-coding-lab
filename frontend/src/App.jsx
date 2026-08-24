@@ -1,9 +1,26 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+import HomePage from './pages/HomePage';
+import LevelSelect from './pages/LevelSelect';
 import LoginPage from './pages/LoginPage';
 import PlayLevel from './pages/PlayLevel';
 import RegisterPage from './pages/RegisterPage';
-import TodoPage from './pages/TodoPage';
+
+// Component bọc bảo vệ Route yêu cầu đăng nhập
+function ProtectedRoute({ user, children }) {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
+// Component bọc Route công khai (Đã đăng nhập thì đẩy về /home)
+function PublicRoute({ user, children }) {
+  if (user) {
+    return <Navigate to="/home" replace />;
+  }
+  return children;
+}
 
 export default function App() {
   const auth = useAuth();
@@ -20,24 +37,61 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to={auth.user ? '/todos' : '/login'} replace />} />
+      {/* Root Route */}
+      <Route
+        path="/"
+        element={<Navigate to={auth.user ? '/home' : '/login'} replace />}
+      />
+
+      {/* Public Routes */}
       <Route
         path="/login"
-        element={auth.user ? <Navigate to="/todos" replace /> : <LoginPage onLogin={auth.login} onGoogleLogin={auth.loginWithGoogle} />}
+        element={
+          <PublicRoute user={auth.user}>
+            <LoginPage onLogin={auth.login} onGoogleLogin={auth.loginWithGoogle} />
+          </PublicRoute>
+        }
       />
       <Route
         path="/register"
-        element={auth.user ? <Navigate to="/todos" replace /> : <RegisterPage onRegister={auth.register} onGoogleLogin={auth.loginWithGoogle} />}
+        element={
+          <PublicRoute user={auth.user}>
+            <RegisterPage onRegister={auth.register} onGoogleLogin={auth.loginWithGoogle} />
+          </PublicRoute>
+        }
+      />
+
+      {/* Protected Routes */}
+      <Route
+        path="/home"
+        element={
+          <ProtectedRoute user={auth.user}>
+            <HomePage user={auth.user} onLogout={auth.logout} />
+          </ProtectedRoute>
+        }
       />
       <Route
-        path="/todos"
-        element={auth.user ? <TodoPage user={auth.user} onLogout={auth.logout} /> : <Navigate to="/login" replace />}
+        path="/levels"
+        element={
+          <ProtectedRoute user={auth.user}>
+            <LevelSelect user={auth.user} onLogout={auth.logout} />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/play/:levelId"
-        element={auth.user ? <PlayLevel user={auth.user} onLogout={auth.logout} /> : <Navigate to="/login" replace />}
+        element={
+          <ProtectedRoute user={auth.user}>
+            <PlayLevel user={auth.user} onLogout={auth.logout} />
+          </ProtectedRoute>
+        }
       />
-      <Route path="*" element={<Navigate to={auth.user ? '/todos' : '/login'} replace />} />
+
+      {/* Wildcard Route (404/Fallback) */}
+      <Route
+        path="*"
+        element={<Navigate to={auth.user ? '/home' : '/login'} replace />}
+      />
     </Routes>
   );
 }

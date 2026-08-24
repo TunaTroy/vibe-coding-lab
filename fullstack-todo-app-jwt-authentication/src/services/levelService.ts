@@ -18,6 +18,14 @@ export interface SubmitLevelResult {
   correctAnswers: Record<string, any>;
 }
 
+export interface LevelWithProgress {
+  id: string;
+  order: number;
+  tenseName: string;
+  isUnlocked: boolean;
+  starsEarned: number;
+}
+
 export class LevelService {
   constructor(private readonly levelRepository: LevelRepository) {}
 
@@ -189,5 +197,53 @@ export class LevelService {
         correctAnswers,
       };
     });
+  }
+
+  async getAllLevelsWithProgress(userId: string): Promise<LevelWithProgress[]> {
+    const allLevels = await this.levelRepository.findAllLevels();
+    const userProgress = await this.levelRepository.findAllLevelProgressByUserId(userId);
+
+    // Create a map of levelId -> progress for quick lookup
+    const progressMap = new Map(
+      userProgress.map((progress) => [progress.levelId, progress])
+    );
+
+    // Calculate isUnlocked for each level
+    // Level 1 is always unlocked
+    // Level > 1 is unlocked if previous level has passedAt
+    const levelsWithProgress: LevelWithProgress[] = allLevels.map((level: any) => {
+      const progress = progressMap.get(level.id);
+      const starsEarned = progress?.stars || 0;
+
+      // Level 1 is always unlocked
+      if (level.order === 1) {
+        return {
+          id: level.id,
+          order: level.order,
+          tenseName: level.tense.name,
+          isUnlocked: true,
+          starsEarned,
+        };
+      }
+
+      // For level > 1, check if previous level is passed
+      const previousLevel = allLevels.find((l: any) => l.order === level.order - 1);
+      let isUnlocked = false;
+
+      if (previousLevel) {
+        const previousProgress = progressMap.get(previousLevel.id);
+        isUnlocked = previousProgress !== undefined && previousProgress.passedAt !== null;
+      }
+
+      return {
+        id: level.id,
+        order: level.order,
+        tenseName: level.tense.name,
+        isUnlocked,
+        starsEarned,
+      };
+    });
+
+    return levelsWithProgress;
   }
 }

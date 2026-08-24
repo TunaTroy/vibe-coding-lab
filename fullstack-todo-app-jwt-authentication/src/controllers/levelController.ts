@@ -57,4 +57,18 @@ export class LevelController {
       next(error);
     }
   };
+
+  getAllLevels = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized.' });
+      }
+
+      const levels = await this.levelService.getAllLevelsWithProgress(userId);
+      return res.status(200).json({ levels });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

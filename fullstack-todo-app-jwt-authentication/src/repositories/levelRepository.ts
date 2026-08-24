@@ -137,4 +137,22 @@ export class LevelRepository {
       },
     });
   }
+
+  async findAllLevels(): Promise<any[]> {
+    return prisma.level.findMany({
+      include: {
+        tense: true,
+      },
+      orderBy: { order: 'asc' },
+    });
+  }
+
+  async findAllLevelProgressByUserId(userId: string): Promise<LevelProgressRecord[]> {
+    return prisma.levelProgress.findMany({
+      where: { userId },
+      include: {
+        level: true,
+      },
+    });
+  }
 }

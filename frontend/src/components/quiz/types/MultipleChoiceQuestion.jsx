@@ -4,16 +4,16 @@ function MultipleChoiceQuestion({ question, onAnswer, selectedAnswer }) {
   const options = question.payload?.options || [];
 
   return (
-    <div className="space-y-3">
-      <p className="text-lg font-medium text-gray-800">{question.prompt}</p>
-      <div className="space-y-2">
+    <div className="space-y-4">
+      <p className="text-lg font-bold text-[#F4E9CE] leading-relaxed">{question.prompt}</p>
+      <div className="space-y-3">
         {options.map((option, index) => (
           <label
             key={index}
-            className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+            className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
               selectedAnswer === index
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-[#DAA520] bg-gradient-to-r from-[#DAA520]/20 to-[#FFD700]/20 shadow-[0_0_12px_rgba(218,165,32,0.3)]'
+                : 'border-[#F0C040]/30 bg-[#1a1a1a]/50 hover:border-[#F0C040]/60 hover:bg-[#1a1a1a]/70'
             }`}
           >
             <input
@@ -22,9 +22,9 @@ function MultipleChoiceQuestion({ question, onAnswer, selectedAnswer }) {
               value={index}
               checked={selectedAnswer === index}
               onChange={() => onAnswer(index)}
-              className="mr-3"
+              className="mr-3 h-4 w-4 text-[#DAA520] focus:ring-[#F0C040]/50 bg-[#1a1a1a] border-[#F0C040]/50"
             />
-            <span className="text-gray-700">{option}</span>
+            <span className={`font-medium ${selectedAnswer === index ? 'text-[#FFD700]' : 'text-[#F4E9CE]/80'}`}>{option}</span>
           </label>
         ))}
       </div>

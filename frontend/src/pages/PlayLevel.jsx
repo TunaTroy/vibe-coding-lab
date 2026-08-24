@@ -95,47 +95,52 @@ export default function PlayLevel({ user, onLogout }) {
     }
   };
 
-  const handleCloseResult = () => {
-    setShowResult(false);
-    setResult(null);
-    setAnswers({});
-    loadQuestions();
-  };
-
   const handleLogout = async () => {
     await onLogout();
     navigate('/login');
   };
 
   const handleBack = () => {
-    navigate('/todos');
+    navigate('/home');
   };
 
   const handleBackToHome = () => {
     setShowResult(false);
     setResult(null);
     setAnswers({});
-    navigate('/todos');
+    navigate('/home');
+  };
+
+  const handleRetry = () => {
+    setShowResult(false);
+    setResult(null);
+    setAnswers({});
+    loadQuestions();
   };
 
   const allAnswered = questions.length > 0 && Object.keys(answers).length === questions.length;
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-8">
-      <div className="mx-auto max-w-3xl">
+    <div className="min-h-screen bg-[#120c0c] px-4 py-8 relative overflow-hidden">
+      {/* Background gradients */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#120c0c] via-[#1a1a1a] to-[#2a0a0a]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_50%_at_50%_0%,_#4a1510_0%,_transparent_60%)]" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-3xl">
+        {/* Header with MUFC theme */}
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
-              English Quiz
-            </p>
-            <h1 className="mt-1 text-3xl font-bold text-slate-900">
-              {level ? `Level ${level.order}` : 'Loading...'}
+            <p className="text-sm font-bold uppercase tracking-[0.3em] text-[#DAA520]">English Quiz</p>
+            <h1 className="mt-1 text-3xl font-bold text-[#F4E9CE] uppercase tracking-wider">
+              {level ? `Trận ${level.order}` : 'Đang tải...'}
             </h1>
           </div>
 
           <div className="flex gap-2">
             <Button variant="secondary" onClick={handleBack}>
-              Quay lại
+              Về Trang Chủ
             </Button>
             <Button variant="secondary" onClick={handleLogout}>
               Logout
@@ -144,22 +149,23 @@ export default function PlayLevel({ user, onLogout }) {
         </div>
 
         {error ? (
-          <div className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="mt-4 rounded-md border border-[#C8102E]/30 bg-[#C8102E]/10 px-3 py-2 text-sm text-[#C8102E]">
             {error}
           </div>
         ) : null}
 
+        {/* Questions */}
         <div className="mt-6">
           {loading ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-              Loading questions...
+            <div className="rounded-xl border border-[#F0C040]/20 bg-[#0a160d]/50 p-6 text-center text-sm text-[#F4E9CE]/70">
+              Đang tải câu hỏi...
             </div>
           ) : (
             <div className="space-y-4">
               {questions.map((question, index) => (
                 <Card key={question.id} className="p-5">
-                  <div className="mb-2 text-sm font-medium text-slate-500">
-                    Question {index + 1} of {questions.length}
+                  <div className="mb-3 text-sm font-bold uppercase tracking-wider text-[#DAA520]">
+                    Câu hỏi {index + 1} / {questions.length}
                   </div>
                   <QuestionRenderer
                     question={question}
@@ -176,11 +182,11 @@ export default function PlayLevel({ user, onLogout }) {
                     disabled={!allAnswered || submitting}
                     className="w-full"
                   >
-                    {submitting ? 'Submitting...' : 'Nộp bài'}
+                    {submitting ? 'Đang nộp...' : 'Nộp bài'}
                   </Button>
                   {!allAnswered && (
-                    <p className="mt-2 text-center text-sm text-slate-500">
-                      Please answer all questions before submitting.
+                    <p className="mt-2 text-center text-sm text-[#F4E9CE]/70">
+                      Vui lòng trả lời tất cả câu hỏi trước khi nộp.
                     </p>
                   )}
                 </Card>
@@ -189,7 +195,7 @@ export default function PlayLevel({ user, onLogout }) {
           )}
         </div>
 
-        <ResultModal isOpen={showResult} onClose={handleCloseResult} onBackToHome={handleBackToHome} result={result} />
+        <ResultModal isOpen={showResult} onClose={handleRetry} onBackToHome={handleBackToHome} result={result} />
       </div>
     </div>
   );
