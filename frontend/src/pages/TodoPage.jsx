@@ -5,6 +5,7 @@ import Card from '../components/reusable/Card';
 import Input from '../components/reusable/Input';
 import TodoList from '../components/todos/TodoList';
 import api from '../services/api';
+import { fetchFirstLevel } from '../services/levelService';
 
 function getErrorMessage(error) {
   if (error?.status === 400) {
@@ -137,6 +138,15 @@ export default function TodoPage({ user, onLogout }) {
     navigate('/login');
   };
 
+  const handleStartQuiz = async () => {
+    try {
+      const firstLevel = await fetchFirstLevel();
+      navigate(`/play/${firstLevel.id}`);
+    } catch (err) {
+      setError('Failed to load quiz. Please try again later.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-8">
       <div className="mx-auto max-w-3xl">
@@ -146,9 +156,14 @@ export default function TodoPage({ user, onLogout }) {
             <h1 className="mt-1 text-3xl font-bold text-slate-900">Your tasks</h1>
           </div>
 
-          <Button variant="secondary" onClick={handleLogout}>
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="primary" onClick={handleStartQuiz}>
+              English Quiz
+            </Button>
+            <Button variant="secondary" onClick={handleLogout}>
+              Logout
+            </Button>
+          </div>
         </div>
 
         <Card className="p-5">

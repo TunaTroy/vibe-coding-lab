@@ -107,3 +107,11 @@
   → Phase 6 (Admin Panel & Polish)
 - Roadmap gốc: xem file Kid_English_Quiz_App_Roadmap.pdf đã upload (hoặc lưu vào
   docs/ nếu muốn tham chiếu lâu dài)
+
+### Phase 1: Backend
+  - [x] PHASE 1 (Kid English Quiz App) — Role-based Authorization: field role
+      (STUDENT/ADMIN) trong User model, middleware requireRole, route test
+      /api/admin/test, seed script tạo Admin. Sự cố: 2 định nghĩa Role trùng nhau
+      (enum tự viết vs Prisma Client) gây lỗi compile hàng loạt sau khi phiên
+      Devin trước bị ngắt giữa chừng — đã audit kỹ và sửa dứt điểm, thống nhất về
+      Prisma Client. 10/10 suites PASS, 81/81 tests PASS, 98.07% Branch coverage.

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
+import PlayLevel from './pages/PlayLevel';
 import RegisterPage from './pages/RegisterPage';
 import TodoPage from './pages/TodoPage';
 
@@ -31,6 +32,10 @@ export default function App() {
       <Route
         path="/todos"
         element={auth.user ? <TodoPage user={auth.user} onLogout={auth.logout} /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/play/:levelId"
+        element={auth.user ? <PlayLevel user={auth.user} onLogout={auth.logout} /> : <Navigate to="/login" replace />}
       />
       <Route path="*" element={<Navigate to={auth.user ? '/todos' : '/login'} replace />} />
     </Routes>

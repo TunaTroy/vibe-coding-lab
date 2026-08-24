@@ -23,6 +23,29 @@ export const updateTodoSchema = z
     title: z.string().trim().min(1, 'Title must not be empty.').optional(),
     done: z.boolean().optional(),
   })
-  .refine((data) => Object.keys(data).length > 0, {
+  .refine((data: any) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided.',
   });
+
+// fail Payload Validation: nếu thiếu field answer hoặc answer = null/undefined thì Zod sẽ reject luôn khi parse, không cần check thủ công nữa
+// export const submitLevelSchema = z.object({
+//   levelId: z.string().min(1, 'Level ID is required.'),
+//   answers: z.array(
+//     z.object({
+//       questionId: z.string().min(1, 'Question ID is required.'),
+//       answer: z.any(),
+//     })
+//   ),
+// });
+
+export const submitLevelSchema = z.object({
+  levelId: z.string(),
+  answers: z.array(
+    z.object({
+      questionId: z.string(),
+      // Thay z.any() bằng union các kiểu answer thật sự có thể có,
+      // để tương lai thêm Matching/Cloze (answer dạng string[]) vẫn mở rộng được
+      answer: z.union([z.string(), z.number()]),
+    })
+  ).min(1),
+});

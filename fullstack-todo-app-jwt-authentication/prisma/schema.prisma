@@ -12,15 +12,26 @@ enum Role {
   ADMIN
 }
 
+enum QuestionType {
+  MULTIPLE_CHOICE
+  FILL_BLANK
+  MATCHING
+  CLOZE
+  TRUE_FALSE_NOT_GIVEN
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String?  @map("password_hash")
   googleId     String?  @unique @map("google_id")
   role         Role     @default(STUDENT)
+  coinBalance  Int      @default(0) @map("coin_balance")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
   todos        Todo[]
+  levelProgress LevelProgress[]
+  coinTransactions CoinTransaction[]
 
   @@map("users")
 }
@@ -35,4 +46,74 @@ model Todo {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("todos")
+}
+
+model Tense {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  order     Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  levels    Level[]
+
+  @@map("tenses")
+}
+
+model Level {
+  id          String   @id @default(cuid())
+  tenseId     String   @map("tense_id")
+  order       Int
+  passScore   Int      @map("pass_score")
+  coinReward  Int      @map("coin_reward")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  tense       Tense    @relation(fields: [tenseId], references: [id], onDelete: Cascade)
+  questions   Question[]
+  levelProgress LevelProgress[]
+
+  @@map("levels")
+}
+
+model Question {
+  id          String       @id @default(cuid())
+  levelId     String       @map("level_id")
+  type        QuestionType
+  prompt      String
+  payload     Json
+  correctAnswer Json       @map("correct_answer")
+  order       Int
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  level       Level        @relation(fields: [levelId], references: [id], onDelete: Cascade)
+
+  @@map("questions")
+}
+
+model LevelProgress {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  levelId      String   @map("level_id")
+  bestScore    Int      @default(0) @map("best_score")
+  stars        Int      @default(0)
+  passedAt     DateTime? @map("passed_at")
+  lastPlayedAt DateTime @default(now()) @map("last_played_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level        Level    @relation(fields: [levelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, levelId])
+  @@map("level_progress")
+}
+
+model CoinTransaction {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("coin_transactions")
 }
