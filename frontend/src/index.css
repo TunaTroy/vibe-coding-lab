@@ -2,29 +2,206 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Global styles — Tailwind v3 (postcss + autoprefixer).
+   Token màu trùng với tailwind.config.js; khai báo thêm dạng
+   CSS variable để dùng trong arbitrary value / SVG inline.
+   ============================================================ */
+
 :root {
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: #0f172a;
-  background: #f8fafc;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --color-night: #120c0c;
+  --color-coal: #1a1a1a;
+  --color-pitch: #131313;
+  --color-cream: #f4e9ce;
+  --color-gold: #f0c040;
+  --color-gold-bright: #ffd700;
+  --color-gold-deep: #daa520;
+  --color-gold-dark: #8b6914;
+  --color-crimson: #c8102e;
+  --color-ember: #d12621;
+  --color-shield: #da291c;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  background-color: var(--color-night);
+  color: var(--color-cream);
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-button,
-input {
-  font: inherit;
+::selection {
+  background: rgba(240, 192, 64, 0.35);
+  color: #fff8e1;
 }
 
-#root {
-  min-height: 100vh;
+/* ---------- ambient "sân vận động" background ---------- */
+.arena-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse 100% 52% at 50% -4%, rgba(218, 41, 28, 0.28), transparent 62%),
+    radial-gradient(ellipse 60% 40% at 88% 100%, rgba(218, 165, 32, 0.1), transparent 60%),
+    linear-gradient(to bottom, #120c0c, #1a1210 48%, #2a0a0a);
+}
+
+.arena-glow {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 46% 34% at 50% 0%, rgba(240, 192, 64, 0.12), transparent 70%);
+  animation: glow-pulse 7s ease-in-out infinite alternate;
+}
+
+.arena-noise {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
+}
+
+@keyframes glow-pulse {
+  from { opacity: 0.55; transform: scale(1); }
+  to { opacity: 1; transform: scale(1.06); }
+}
+
+/* ---------- scroll reveal ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--rv-delay, 0ms);
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- micro animations ---------- */
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.86) translateY(14px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.anim-pop-in {
+  animation: pop-in 0.42s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+}
+
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+.anim-shake {
+  animation: shake-x 0.4s ease both;
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.anim-rise {
+  animation: rise-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes star-pop {
+  0% { opacity: 0; transform: scale(0.2) rotate(-30deg); }
+  70% { transform: scale(1.25) rotate(6deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+.anim-star {
+  animation: star-pop 0.55s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+}
+
+@keyframes blink-caret {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0; }
+}
+.cursor-blink {
+  animation: blink-caret 1.05s steps(1) infinite;
+}
+
+/* nút vàng 3D kiểu game — hiệu ứng nhấn */
+.btn-game {
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.2s ease;
+}
+.btn-game:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+.btn-game:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--color-gold-dark), 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* quét sáng nhẹ trên card khi hover */
+.card-shine {
+  position: relative;
+  overflow: hidden;
+}
+.card-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 42%, rgba(255, 215, 0, 0.07) 50%, transparent 58%);
+  transform: translateX(-120%);
+  transition: transform 0.9s ease;
+  pointer-events: none;
+}
+.card-shine:hover::after {
+  transform: translateX(120%);
+}
+
+/* ---------- scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a2a14;
+  border-radius: 8px;
+  border: 2px solid #120c0c;
+}
+::-webkit-scrollbar-track {
+  background: #120c0c;
+}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .arena-glow,
+  .anim-pop-in,
+  .anim-shake,
+  .anim-rise,
+  .anim-star,
+  .cursor-blink {
+    animation: none;
+  }
+  .card-shine::after {
+    display: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001s !important;
+    transition-duration: 0.001s !important;
+  }
 }
