@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import BattleModeCard from "../components/home/BattleModeCard";
-import RankingPanel from "../components/home/RankingPanel";
+import EventBanner from "../components/home/EventBanner";
+import LeaderboardWidget from "../components/home/LeaderboardWidget";
 import StudyModeCard from "../components/home/StudyModeCard";
-import PageShell, { displayName } from "../components/layout/PageShell";
-import SideMenu from "../components/layout/SideMenu";
+import SidebarNav from "../components/layout/SidebarNav";
+import TopBar from "../components/layout/TopBar";
 import Reveal from "../components/ui/Reveal";
 import { DAILY_TASKS_SEED, RANKING_SEED } from "../data/levels";
 import { useAuth } from "../hooks/useAuth";
@@ -13,9 +14,9 @@ import { getErrorMessage } from "../services/api";
 import { fetchAllLevels } from "../services/levelService";
 
 /* ============================================================
-   HomePage — SAU REFACTOR chỉ còn làm nhiệm vụ compose:
-   PageShell + SideMenu + StudyMode + BattleMode + Ranking.
-   (Bản gốc: 1 file ~21KB chứa mọi thứ.)
+   HomePage — SAU REFACTOR theo UI Spec mới:
+   Layout: TopBar → Grid 2 cột (Study + Battle) → Leaderboard → EventBanner
+   SidebarNav dạng drawer off-canvas thay thế SideMenu cũ
    ============================================================ */
 
 export default function HomePage() {
@@ -23,6 +24,7 @@ export default function HomePage() {
   const navigate = useNavigate();
   const [levels, setLevels] = useState([]);
   const [error, setError] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -46,12 +48,12 @@ export default function HomePage() {
 
   if (!user) return null;
 
-  // Bảng xếp hạng: seed + người chơi hiện tại, sort theo sao
+  // Bảng xếp hạng: seed + người chơi hiện tại, sort theo coins
   const players = [
     ...RANKING_SEED.map((p) => ({ ...p, rank: 0, isCurrentUser: false })),
-    { rank: 0, name: displayName(user), stars: 12, coins: user.coinBalance, isCurrentUser: true },
+    { rank: 0, name: user.email.split("@")[0], stars: 12, coins: user.coinBalance, isCurrentUser: true },
   ]
-    .sort((a, b) => b.stars - a.stars)
+    .sort((a, b) => b.coins - a.coins)
     .map((p, i) => ({ ...p, rank: i + 1 }));
 
   const handleLogout = async () => {
@@ -60,50 +62,51 @@ export default function HomePage() {
   };
 
   return (
-    <PageShell user={user} onLogout={handleLogout} active="home">
-      {/* Lời chào */}
-      <Reveal>
-        <div className="mb-6">
-          <h2 className="font-display text-3xl sm:text-4xl font-extrabold uppercase tracking-wide text-cream">
-            Chào mừng trở lại, <span className="text-gold-bright">{displayName(user)}</span>! 👋
-          </h2>
-          <p className="mt-1.5 text-sm text-cream/60">
-            Sân Old Trafford đang chờ bạn — hoàn thành bài học hôm nay để leo hạng nào.
-          </p>
-        </div>
-      </Reveal>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background arena */}
+      <div className="arena-bg" aria-hidden />
+      <div className="arena-glow" aria-hidden />
+      <div className="arena-noise" aria-hidden />
 
-      {error && (
-        <div role="alert" className="anim-rise mb-5 rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-3 text-sm text-[#ff9d92]">
-          {error}
-        </div>
-      )}
+      {/* Sidebar Drawer */}
+      <SidebarNav isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} onLogout={handleLogout} />
 
-      <div className="grid gap-6 lg:grid-cols-12">
-        {/* Cột trái: menu + nhiệm vụ */}
-        <div className="lg:col-span-3 order-2 lg:order-1">
-          <Reveal delay={80}>
-            <SideMenu tasks={DAILY_TASKS_SEED} />
-          </Reveal>
-        </div>
+      <div className="relative z-10 max-w-5xl mx-auto px-4 py-6">
+        {/* TopBar */}
+        <TopBar onMenuToggle={() => setIsMenuOpen(true)} />
 
-        {/* Cột giữa: 2 chế độ */}
-        <div className="lg:col-span-6 order-1 lg:order-2 space-y-6">
-          <Reveal delay={40}>
-            <StudyModeCard levelsCount={levels.length} onStart={() => navigate("/levels")} />
-          </Reveal>
-          <Reveal delay={140}>
-            <BattleModeCard />
-          </Reveal>
-        </div>
+        {/* Main Content Container */}
+        <div className="bg-gradient-to-b from-[#241f1f]/80 to-[#141010]/80 border-x border-b border-gold/20 rounded-b-2xl p-6 space-y-6">
+          {error && (
+            <div role="alert" className="anim-rise rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-3 text-sm text-[#ff9d92]">
+              {error}
+            </div>
+          )}
 
-        {/* Cột phải: xếp hạng */}
-        <div className="lg:col-span-3 order-3">
+          {/* Hàng 1: Grid 2 cột - Study Mode & Battle Mode */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Cột trái: Chế độ Học */}
+            <Reveal delay={40}>
+              <StudyModeCard levelsCount={levels.length} onStart={() => navigate("/levels")} />
+            </Reveal>
+
+            {/* Cột phải: Chế độ Chiến */}
+            <Reveal delay={140}>
+              <BattleModeCard />
+            </Reveal>
+          </div>
+
+          {/* Hàng 2: Bảng Xếp Hạng */}
           <Reveal delay={120}>
-            <RankingPanel players={players} />
+            <LeaderboardWidget players={players} />
+          </Reveal>
+
+          {/* Hàng 3: Event Banner Footer */}
+          <Reveal delay={160}>
+            <EventBanner />
           </Reveal>
         </div>
       </div>
-    </PageShell>
+    </div>
   );
 }

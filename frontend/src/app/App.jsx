@@ -2,11 +2,15 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
 import HomePage from "../pages/HomePage";
+import LeaderboardPage from "../pages/LeaderboardPage";
 import LevelSelectPage from "../pages/LevelSelectPage";
 import LoginPage from "../pages/LoginPage";
 import PlayLevelPage from "../pages/PlayLevelPage";
+import ProfilePage from "../pages/ProfilePage";
 import RegisterPage from "../pages/RegisterPage";
+import ShopPage from "../pages/ShopPage";
 import TodoPage from "../pages/TodoPage";
+import WarModePage from "../pages/WarModePage";
 
 /* ============================================================
    App — composition root: guards + route table.
@@ -96,6 +100,38 @@ export default function App() {
         element={
           <ProtectedRoute>
             <TodoPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/shop"
+        element={
+          <ProtectedRoute>
+            <ShopPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/leaderboard"
+        element={
+          <ProtectedRoute>
+            <LeaderboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/war-mode"
+        element={
+          <ProtectedRoute>
+            <WarModePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         }
       />
