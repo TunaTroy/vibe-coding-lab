@@ -1,181 +1,166 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import GoogleLoginButton from '../components/reusable/GoogleLoginButton';
-import Button from '../components/reusable/Button';
-import Card from '../components/reusable/Card';
-import Input from '../components/reusable/Input';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-function getErrorMessage(error) {
-  if (error?.status === 400) {
-    return error.errors?.email?.[0] || error.errors?.password?.[0] || error.data?.message || 'Validation failed.';
-  }
+import { Crest } from "../components/layout/PageShell";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import GoogleLoginButton from "../components/ui/GoogleLoginButton";
+import Input from "../components/ui/Input";
+import Reveal from "../components/ui/Reveal";
+import { useAuth } from "../hooks/useAuth";
+import { getErrorMessage } from "../services/api";
 
-  if (error?.status === 403) {
-    return 'You do not have permission to do that.';
-  }
+/* ============================================================
+   RegisterPage — cùng pattern với LoginPage, thêm bước xác nhận
+   mật khẩu phía client. Backend registerSchema yêu cầu
+   password ≥ 8 ký tự.
+   ============================================================ */
 
-  if (error?.status === 500) {
-    return error.message || 'Server error. Please try again later.';
-  }
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-  return error?.message || 'Unable to register right now.';
-}
-
-export default function RegisterPage({ onRegister, onGoogleLogin }) {
+export default function RegisterPage() {
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    // Trim email to prevent accidental spaces
-    const trimmedValue = name === 'email' ? value.trim() : value;
-    setForm((current) => ({ ...current, [name]: trimmedValue }));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setServerError("");
 
-    if (fieldErrors[name]) {
-      setFieldErrors((current) => ({ ...current, [name]: undefined }));
-    }
-
-    if (error) {
-      setError('');
-    }
-  };
-
-  const handleGoogleLogin = async (idToken) => {
-    if (!onGoogleLogin) {
-      return;
-    }
+    const errs = {};
+    if (!EMAIL_RE.test(email)) errs.email = "Email không đúng định dạng.";
+    if (password.length < 8)
+      errs.password = "Mật khẩu phải có ít nhất 8 ký tự.";
+    if (confirm !== password) errs.confirm = "Mật khẩu xác nhận chưa khớp.";
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) return;
 
     setSubmitting(true);
-    setError('');
-    setFieldErrors({});
-
     try {
-      await onGoogleLogin(idToken);
-      navigate('/todos');
+      await register(email, password);
+      navigate("/home", { replace: true });
     } catch (err) {
-      // Only show error message if it's not a generic 401 from session check
-      if (err?.status === 401 && err?.message?.includes('Google authentication failed')) {
-        setError('Google authentication failed. Please try again.');
-      } else if (err?.status !== 401) {
-        setError(getErrorMessage(err));
-      } else {
-        setError('Authentication failed. Please try again.');
+      if (err?.status === 400 && err.errors) {
+        setFieldErrors({
+          email: err.errors.email?.[0],
+          password: err.errors.password?.[0],
+        });
       }
+      setServerError(getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setSubmitting(true);
-    setError('');
-    setFieldErrors({});
-
+  const handleGoogleSuccess = async (idToken) => {
+    setGoogleLoading(true);
+    setServerError("");
     try {
-      // Trim values before submit for safety
-      const trimmedForm = {
-        email: form.email.trim(),
-        password: form.password.trim(),
-      };
-      await onRegister(trimmedForm);
-      navigate('/todos');
+      await loginWithGoogle(idToken);
+      navigate("/home", { replace: true });
     } catch (err) {
-      // Don't show "session expired" for registration attempt failures
-      if (err?.status === 401) {
-        setError('Registration failed. Please try again.');
-      } else {
-        const message = getErrorMessage(err);
-        setError(message);
-      }
-      if (err?.errors) {
-        setFieldErrors(err.errors);
-      }
+      setServerError(getErrorMessage(err));
     } finally {
-      setSubmitting(false);
+      setGoogleLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#120c0c] px-4 py-10 relative overflow-hidden">
-      {/* Background gradients */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#120c0c] via-[#1a1a1a] to-[#2a0a0a]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_50%_at_50%_0%,_#4a1510_0%,_transparent_60%)]" />
-      </div>
+    <div className="min-h-screen relative flex items-center justify-center px-4 py-10">
+      <div className="arena-bg" aria-hidden />
+      <div className="arena-glow" aria-hidden />
+      <div className="arena-noise" aria-hidden />
 
-      <div className="relative z-10 w-full max-w-md">
-        {/* MUFC Crest */}
-        <div className="text-center mb-6">
-          <svg className="w-20 h-22 mx-auto mb-4 drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]" viewBox="0 0 100 112" xmlns="http://www.w3.org/2000/svg">
-            <path d="M50 2 L92 16 L92 52 C92 82 74 100 50 110 C26 100 8 82 8 52 L8 16 Z" fill="#DA291C" stroke="#F0C040" strokeWidth="3" />
-            <path d="M50 8 L86 20 L86 52 C86 78 70 94 50 103 C30 94 14 78 14 52 L14 20 Z" fill="#131313" />
-            <g fill="#F0C040">
-              <path d="M50 26 c-3 0 -5 2 -5 5 c0 2 1 3.5 2.5 4.5 L46 44 h8 l-1.5 -8.5 C54 34.5 55 33 55 31 c0 -3 -2 -5 -5 -5 z" />
-              <path d="M42 46 h16 l-2 34 c0 4 -3 8 -6 8 s-6 -4 -6 -8 z" />
-              <path d="M36 30 l4 8 M64 30 l-4 8" stroke="#F0C040" strokeWidth="3" strokeLinecap="round" />
-            </g>
-          </svg>
-          <p className="text-sm font-bold uppercase tracking-[0.3em] text-[#DAA520]">Tạo tài khoản mới</p>
-          <h1 className="mt-2 text-3xl font-bold text-[#F4E9CE] uppercase tracking-wider">Đăng Ký</h1>
-        </div>
-
-        <Card className="p-6">
-          <div className="mb-4">
-            <GoogleLoginButton onSuccess={handleGoogleLogin} disabled={submitting} />
+      <Reveal className="relative z-10 w-full max-w-md">
+        <Card shine className="p-8 border-2 border-gold/40">
+          <div className="text-center mb-7">
+            <Crest className="w-16 h-[74px] mx-auto" />
+            <h1 className="font-display mt-4 text-2xl font-extrabold uppercase tracking-wider text-cream">
+              Gia Nhập <span className="text-gold-bright">Học Viện</span>
+            </h1>
+            <p className="mt-1 text-xs text-cream/55 uppercase tracking-[0.2em]">
+              Bắt đầu hành trình chinh phục 12 thì
+            </p>
           </div>
 
-          <div className="mb-4 flex items-center gap-3">
-            <div className="h-px flex-1 bg-[#F0C040]/30" />
-            <span className="text-xs uppercase tracking-[0.2em] text-[#F4E9CE]/60">hoặc</span>
-            <div className="h-px flex-1 bg-[#F0C040]/30" />
-          </div>
+          {serverError && (
+            <div
+              role="alert"
+              className="anim-shake mb-5 rounded-xl border border-crimson/60 bg-crimson/15 px-4 py-3 text-sm text-[#ff9d92]"
+            >
+              {serverError}
+            </div>
+          )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error ? (
-              <div className="rounded-md border border-[#C8102E]/30 bg-[#C8102E]/10 px-3 py-2 text-sm text-[#C8102E]">
-                {error}
-              </div>
-            ) : null}
-
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <Input
               label="Email"
               type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
+              placeholder="hocvien@vibemail.vn"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              error={fieldErrors.email}
               autoComplete="email"
-              error={fieldErrors.email?.[0]}
             />
-
             <Input
               label="Mật khẩu"
               type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="Tạo mật khẩu"
+              placeholder="Tối thiểu 8 ký tự"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              error={fieldErrors.password}
               autoComplete="new-password"
-              error={fieldErrors.password?.[0]}
             />
-
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? 'Đang tạo tài khoản...' : 'Đăng Ký'}
+            <Input
+              label="Xác nhận mật khẩu"
+              type="password"
+              placeholder="Nhập lại mật khẩu"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              error={fieldErrors.confirm}
+              autoComplete="new-password"
+            />
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={submitting}
+            >
+              {submitting ? "Đang tạo tài khoản..." : "Đăng Ký 🔴"}
             </Button>
           </form>
 
-          <p className="mt-5 text-center text-sm text-[#F4E9CE]/70">
-            Đã có tài khoản?{' '}
-            <Link to="/login" className="font-semibold text-[#DAA520] hover:text-[#FFD700]">
-              Đăng nhập ngay
+          <div className="my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-gold/20" />
+            <span className="text-[11px] uppercase tracking-widest text-cream/40">
+              hoặc
+            </span>
+            <span className="h-px flex-1 bg-gold/20" />
+          </div>
+
+          <GoogleLoginButton
+            onSuccess={handleGoogleSuccess}
+            disabled={googleLoading}
+          />
+
+          <p className="mt-6 text-center text-sm text-cream/60">
+            Đã có tài khoản?{" "}
+            <Link
+              to="/login"
+              className="font-bold text-gold-bright hover:underline underline-offset-4"
+            >
+              Đăng nhập
             </Link>
           </p>
         </Card>
-      </div>
+      </Reveal>
     </div>
   );
 }

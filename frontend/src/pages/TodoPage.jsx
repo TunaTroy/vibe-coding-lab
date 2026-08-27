@@ -1,216 +1,141 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Button from '../components/reusable/Button';
-import Card from '../components/reusable/Card';
-import Input from '../components/reusable/Input';
-import TodoList from '../components/todos/TodoList';
-import api from '../services/api';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-function getErrorMessage(error) {
-  if (error?.status === 400) {
-    return error.errors?.title?.[0] || error.data?.message || 'Validation failed.';
-  }
+import PageShell from "../components/layout/PageShell";
+import TodoList from "../components/todos/TodoList";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import Input from "../components/ui/Input";
+import Reveal from "../components/ui/Reveal";
+import { useAuth } from "../hooks/useAuth";
+import { getErrorMessage } from "../services/api";
+import * as todoService from "../services/todoService";
 
-  if (error?.status === 401) {
-    return 'Your session expired. Please log in again.';
-  }
+/* ============================================================
+   TodoPage — trang demo Todo JWT (bản gốc tồn tại nhưng KHÔNG
+   được wire vào router — refactor này thêm route /todos).
+   ============================================================ */
 
-  if (error?.status === 403) {
-    return 'You do not have permission to update this todo.';
-  }
-
-  if (error?.status === 500) {
-    return error.message || 'Server error. Please try again later.';
-  }
-
-  return error?.message || 'There was a problem with your request.';
-}
-
-export default function TodoPage({ user, onLogout }) {
+export default function TodoPage() {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+
   const [todos, setTodos] = useState([]);
-  const [title, setTitle] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const loadTodos = async () => {
-    setLoading(true);
-    try {
-      const response = await api.request('/todos');
-      setTodos(response.todos || []);
-    } catch (err) {
-      const message = getErrorMessage(err);
-      setError(message);
-
-      if (err?.status === 401) {
-        onLogout();
-        navigate('/login');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [title, setTitle] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadTodos();
+    let mounted = true;
+    todoService
+      .fetchTodos()
+      .then((res) => mounted && setTodos(res.todos))
+      .catch((err) => mounted && setError(getErrorMessage(err)))
+      .finally(() => mounted && setLoading(false));
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const handleCreate = async (event) => {
-    event.preventDefault();
-    const trimmed = title.trim();
+  if (!user) return null;
 
-    if (!trimmed) {
-      setError('Title is required.');
-      return;
-    }
+  const remaining = todos.filter((t) => !t.completed).length;
 
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    setError("");
     try {
-      setError('');
-      await api.request('/todos', {
-        method: 'POST',
-        body: JSON.stringify({ title: trimmed }),
-      });
-      setTitle('');
-      await loadTodos();
+      await todoService.createTodo(title);
+      setTitle("");
+      const res = await todoService.fetchTodos();
+      setTodos(res.todos);
     } catch (err) {
       setError(getErrorMessage(err));
-      if (err?.status === 401) {
-        onLogout();
-        navigate('/login');
-      }
     }
   };
 
-  const handleToggle = async (todoId, done) => {
+  const handleToggle = async (id) => {
+    const current = todos.find((t) => t.id === id);
+    if (!current) return;
     try {
-      setError('');
-      await api.request(`/todos/${todoId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ done }),
-      });
-      await loadTodos();
+      // PUT /todos/:id với { done } — backend updateTodoSchema nhận title?/done?
+      await todoService.toggleTodo(id, !current.completed);
+      const res = await todoService.fetchTodos();
+      setTodos(res.todos);
     } catch (err) {
       setError(getErrorMessage(err));
-      if (err?.status === 401) {
-        onLogout();
-        navigate('/login');
-      }
     }
   };
 
-  const handleSaveTitle = async (todoId, nextTitle) => {
+  const handleDelete = async (id) => {
     try {
-      setError('');
-      await api.request(`/todos/${todoId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ title: nextTitle }),
-      });
-      await loadTodos();
+      await todoService.deleteTodo(id);
+      setTodos((prev) => prev.filter((t) => t.id !== id));
     } catch (err) {
       setError(getErrorMessage(err));
-      if (err?.status === 401) {
-        onLogout();
-        navigate('/login');
-      }
-      throw err;
-    }
-  };
-
-  const handleDelete = async (todoId) => {
-    try {
-      setError('');
-      await api.request(`/todos/${todoId}`, {
-        method: 'DELETE',
-      });
-      await loadTodos();
-    } catch (err) {
-      setError(getErrorMessage(err));
-      if (err?.status === 401) {
-        onLogout();
-        navigate('/login');
-      }
     }
   };
 
   const handleLogout = async () => {
-    await onLogout();
-    navigate('/login');
-  };
-
-  const handleStartQuiz = async () => {
-    navigate('/levels');
-  };
-
-  const handleBackToHome = () => {
-    navigate('/home');
+    await logout();
+    navigate("/login");
   };
 
   return (
-    <div className="min-h-screen bg-[#120c0c] px-4 py-8 relative overflow-hidden">
-      {/* Background gradients */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#120c0c] via-[#1a1a1a] to-[#2a0a0a]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_50%_at_50%_0%,_#4a1510_0%,_transparent_60%)]" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-3xl">
-        {/* Header with MUFC theme */}
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-[0.3em] text-[#DAA520]">Trang Chủ</p>
-            <h1 className="mt-1 text-3xl font-bold text-[#F4E9CE] uppercase tracking-wider">
-              Old Trafford <span className="text-[#FFD700]">HQ</span>
-            </h1>
+    <PageShell user={user} onLogout={handleLogout} active="todos">
+      <div className="max-w-2xl mx-auto">
+        <Reveal>
+          <div className="mb-6">
+            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-gold-deep">
+              Demo · Fullstack Todo JWT
+            </p>
+            <h2 className="font-display mt-1 text-3xl font-extrabold uppercase tracking-wide text-cream">
+              Ghi Chú <span className="text-gold-bright">HLV</span>
+            </h2>
+            <p className="mt-1.5 text-sm text-cream/60">
+              Lên kế hoạch luyện tập như một huấn luyện viên thực thụ.
+            </p>
           </div>
+        </Reveal>
 
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={handleBackToHome}>
-              Về Trang Chủ
-            </Button>
-            <Button variant="primary" onClick={handleStartQuiz}>
-              English Quiz
-            </Button>
-            <Button variant="secondary" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
-        </div>
+        <Reveal delay={80}>
+          <Card className="p-6 border-2 border-gold/25">
+            {error && (
+              <div role="alert" className="anim-shake mb-4 rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-2.5 text-sm text-[#ff9d92]">
+                {error}
+              </div>
+            )}
 
-        {/* Todo input card */}
-        <Card className="p-5">
-          <form onSubmit={handleCreate} className="flex flex-col gap-3 md:flex-row">
-            <Input
-              label="Thêm nhiệm vụ"
-              name="title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Cần làm gì?"
-            />
-            <div className="flex items-end">
-              <Button type="submit" className="w-full md:w-auto">
-                Thêm
+            <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <Input
+                  label="Công việc mới"
+                  placeholder="Ví dụ: Học 5 từ vựng về sân vận động..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </div>
+              <Button type="submit" size="lg" className="sm:self-end sm:mt-0">
+                Thêm +
               </Button>
-            </div>
-          </form>
-        </Card>
+            </form>
 
-        {error ? (
-          <div className="mt-4 rounded-md border border-[#C8102E]/30 bg-[#C8102E]/10 px-3 py-2 text-sm text-[#C8102E]">
-            {error}
-          </div>
-        ) : null}
-
-        {/* Todo list */}
-        <div className="mt-6">
-          {loading ? (
-            <div className="rounded-xl border border-[#F0C040]/20 bg-[#0a160d]/50 p-6 text-center text-sm text-[#F4E9CE]/70">
-              Đang tải nhiệm vụ...
+            <div className="mt-6">
+              {loading ? (
+                <p className="py-10 text-center font-mono text-sm text-cream/50">Đang tải ghi chú...</p>
+              ) : (
+                <TodoList todos={todos} onToggle={handleToggle} onDelete={handleDelete} />
+              )}
             </div>
-          ) : (
-            <TodoList todos={todos} onToggle={handleToggle} onDelete={handleDelete} onSaveTitle={handleSaveTitle} />
-          )}
-        </div>
+
+            {!loading && todos.length > 0 && (
+              <p className="mt-4 pt-4 border-t border-gold/15 font-mono text-xs text-cream/50">
+                {remaining} việc cần làm · {todos.length - remaining} đã hoàn thành 🏆
+              </p>
+            )}
+          </Card>
+        </Reveal>
       </div>
-    </div>
+    </PageShell>
   );
 }
