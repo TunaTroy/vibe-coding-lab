@@ -1,98 +1,101 @@
 # Tiến độ dự án
 
+> **Quy ước cập nhật (append-only):** các mục đã đánh số `[N]` là bất biến. Cập nhật mới
+> CHỈ thêm vào **"Nhật ký cập nhật" ở CUỐI file** (mục kế tiếp = số kế tiếp), không sửa
+> bất kỳ dòng nào ở trên. Nếu một việc trong "Đang làm" hoàn thành, chép nguyên văn
+> xuống Nhật ký với số mới.
+
 ## Đã hoàn thành
-- [x] Setup môi trường: VS Code, Node.js, Git
-- [x] validators/emailValidator.js: isValidEmail(), isDisposableEmail(), normalizeEmail()
-      — 100% Branch coverage
-- [x] validators/passwordValidator.js: checkPasswordStrength() — 100% Branch coverage,
-      làm theo đúng quy trình PLAN/ACT/REVIEW (Module 6.1)
-- [x] Quy chuẩn kỹ thuật: .github/copilot-instructions.md (có Self-Check bắt buộc)
-- [x] Ghi log AI đầy đủ tại docs/ai-logs/
-- [x] Master Prompt tái sử dụng tại PROMPTS.md
-- [x] Module 6.2: Memory Bank (memory-bank/architecture.md, progress.md) — verify
-      thành công qua New Chat và qua máy PC mới, AI tóm tắt đúng ngữ cảnh dự án
-- [x] Module 7: AI Code Review trên passwordValidator.js — không phát hiện
-      Critical/Warning, chỉ 2 Suggestion nhỏ
-- [x] Module 8: validators/registrationValidator.js — tạo code cố ý lỗi (spaghetti)
-      rồi refactor dùng lại isValidEmail() + checkPasswordStrength(), tách side-effect
-      (sendWelcomeEmail/logAudit) khỏi validator — 100% Branch coverage
-- [x] Test chuyển máy PC thành công (clone repo, npm install, tạo lại .env,
-      Memory Bank hoạt động đúng trên máy mới)
-- [x] Module 9: MCP Filesystem Server cấu hình qua .vscode/mcp.json (khác sách —
-      VS Code Copilot dùng key "servers" thay vì "mcpServers"), verify qua Output
-      panel (14 tools, Running) và test thực tế liệt kê file qua MCP tool
-- [x] Module 9.4: MCP Postgres Server với user mcp_readonly (Least Privilege) —
-      cấu hình 2026-08-05, VERIFY THỰC TẾ hoàn tất 2026-08-09: thử DELETE FROM
-      public.users qua pgAdmin bằng user mcp_readonly, xác nhận bị chặn
-      (permission denied) — bảo mật hoạt động đúng thiết kế, không chỉ đúng lý
-      thuyết cấu hình
-- [x] MODULE 12 — HOÀN THÀNH ĐẦY ĐỦ (2026-08-09):
-      - Backend fullstack-todo-app-jwt-authentication: Prisma schema (User, Todo),
-        authController (bcrypt + JWT httpOnly cookie), middleware requireAuth,
-        todoController CRUD với IDOR protection có Integration Test thật (không
-        mock, dùng DB thật) — 9/9 test suites PASS, 51/51 tests PASS, 100% Branch
-        coverage toàn bộ business logic
-      - Frontend: React + Vite + TailwindCSS, cấu trúc đúng chuẩn
-        (components/reusable, components/todos, pages, hooks, services), chạy ổn
-        định tại localhost:5173/5174, kết nối Backend đúng bằng cookie httpOnly
-        (không dùng Bearer Token)
-      - Test E2E qua UI thật: Register → Login → CRUD Todo → Logout hoạt động đúng
-      - Đối chiếu bảng tiêu chí tự đánh giá cuối Module 12 trong sách: đạt đủ 8/8
-        tiêu chí
-- [x] Xử lý thành công sự cố đồng bộ đa máy (PC ↔ Laptop) do zip/copy thủ công
-      thay vì Git: worktree link hỏng, merge conflict, cấu trúc lồng sai, thiếu
-      ts-jest, DB chưa sẵn sàng trên máy mới
-- [x] Xử lý thành công sự cố worktree lồng 3 cấp do nhiều Cloud Agent session liên
-      tiếp — dùng Devin CLI phân tích read-only, xác nhận code tốt nhất đã có sẵn
-      trong master, dọn sạch toàn bộ worktree/branch thừa, restart máy giải quyết
-      lỗi file lock không xác định được process
+
+- [x] [1] Setup môi trường: VS Code, Node.js, Git
+- [x] [2] Nền tảng từ sách "Từ Zero Đến Vibe Coding" (Modules 6–9): validators đạt 100%
+      Branch coverage, `.github/copilot-instructions.md`, `docs/ai-logs/`, Memory Bank
+      (verify qua New Chat + máy PC mới), MCP Filesystem + MCP Postgres với user
+      `mcp_readonly` (đã verify chặn lệnh DELETE thật 2026-08-09)
+- [x] [3] MODULE 12 — fullstack Todo App (2026-08-09): Backend Prisma (User, Todo) +
+      bcrypt + JWT httpOnly cookie + CRUD có IDOR protection bằng Integration Test với
+      DB thật — 9/9 suites, 51/51 tests, 100% Branch coverage · Frontend React + Vite +
+      Tailwind kết nối backend bằng cookie httpOnly (không Bearer) · E2E qua UI thật ·
+      đạt 8/8 tiêu chí tự đánh giá của sách
+- [x] [4] Xử lý thành công 2 sự cố hạ tầng: đồng bộ đa máy do zip/copy thủ công và
+      worktree lồng 3 cấp do nhiều Cloud Agent session (chi tiết trong Ghi chú kỹ thuật)
+- [x] [5] PHASE 1 (2026-08-11) — Role-based Authorization: field `role` (STUDENT/ADMIN)
+      trong User model, middleware `requireRole`, route test `/api/admin/test`, seed
+      script tạo Admin · sửa dứt điểm sự cố enum Role trùng nhau (custom vs Prisma
+      Client gây lỗi compile 13 file) — 10/10 suites, 81/81 tests, 98.07% Branch coverage
+- [x] [6] Login Google (2026-08-09, commit fb1449a): backend `POST /auth/google` verify
+      idToken (google-auth-library) · frontend dùng Google Identity Services One Tap thật
+- [x] [7] PHASE 2 — Data Model Quiz (mức tối giản, 2026-08-24): models `Tense`,
+      `Level` (passScore, coinReward), `Question` (payload/correctAnswer dạng Json, enum
+      5 loại câu hỏi), `LevelProgress` · seed Present Simple: 5 câu MULTIPLE_CHOICE,
+      passScore 70, coinReward 50 · GHI CHÚ: chưa tạo QuizAttempt/CoinTransaction
+      (xem architecture.md §7)
+- [x] [8] PHASE 3 — Core Quiz API (2026-08-24, commit e33b1a6): `GET /api/levels/`
+      (kèm isUnlocked + starsEarned backend tự tính), `GET /api/levels/:id/questions`
+      (strip correctAnswer), `POST /api/levels/:id/submit` chấm server-side trong 1
+      transaction → `{score, stars, coinAwarded, correctAnswers}` · coin chỉ thưởng lần
+      pass đầu · level khóa tuần tự · 403 khi submit level chưa mở
+- [x] [9] Frontend PresentSimple Flow + Homepage UI/UX (2026-08-24, e33b1a6 + f62cee7):
+      flow trả lời → nộp bài → ResultModal (sao + Đô la Đạt) · dashboard với Study Mode,
+      Battle Mode (sự kiện cuối tuần), Ranking tuần, Daily Tasks · theme Quỷ Đỏ hoàn chỉnh
+- [x] [10] Refactor cấu trúc frontend (2026-08-27, dda7bb5 → 45293df → a8f3bb9):
+      chuẩn hoá `app/ · pages/ · components/{ui,layout,quiz,todos,home} · hooks/ ·
+      services/ · data/ · types/` · GIỮ nguyên môi trường React 18.3.1 + Vite 5.4.10 +
+      Tailwind 3.4.16 + JSX · nối lại services với backend THẬT (cookie httpOnly,
+      Google GSI, submit server chấm — xoá toàn bộ mock/localStorage auth) · thêm route
+      `/todos` trước đây bị bỏ quên · tách HomePage 21KB thành PageShell + SideMenu +
+      3 widget
 
 ## Đang làm
-- [ ] Chưa có việc đang làm — Module 12 đã khép lại đầy đủ, cuốn sách "Từ Zero Đến
-      Vibe Coding" đã hoàn thành trọn vẹn 12/12 module
+
+- [ ] [11] Quy hoạch Memory Bank theo hiện trạng & gom tài liệu về 1 mối (2026-08-27):
+      viết lại `architecture.md` bám sát code backend/frontend thật · đánh số progress
+      + thêm Nhật ký append-only · xoá các bản sao trùng lặp còn sót TRONG backend
+      (`fullstack-todo-app-jwt-authentication/.github/`, `validators/`, `PROMPTS.md`,
+      `CREATE_FEATURE_GUIDE.md`, file rác `logfile`) — giữ duy nhất `memory-bank/` ở gốc
 
 ## Việc tiếp theo (tuỳ chọn, không bắt buộc, mở rộng thêm nếu muốn)
-- [ ] Thêm blacklist mật khẩu phổ biến vào passwordValidator
-- [ ] Module 10: Git Worktree, tmux — đã trải nghiệm thực tế qua sự cố worktree
-      lồng nhau, có thể học lại lý thuyết chính thức nếu muốn hệ thống hoá kiến thức
-- [ ] Module 11: Background Agents — đã dùng thử Devin để phân tích worktree,
-      có thể khám phá thêm Cursor/Windsurf nếu muốn
-- [ ] Dọn 2 thư mục rác còn sót: memory-bank-summary-review/,
-      memory-bank-summary-review.worktrees/
-- [ ] Deploy thử ứng dụng lên môi trường thật (Vercel/Railway/Render) — mở rộng
-      ngoài phạm vi sách nếu muốn có sản phẩm thật để chia sẻ
+
+- [ ] PHASE 4 — Streak: model + logic chuỗi ngày học liên tiếp + UI
+- [ ] PHASE 5 — Leaderboard/Shop: thay RankingPanel mock bằng API thật · quyết định
+      ledger CoinTransaction (append-only) TRƯỚC khi làm Shop
+- [ ] PHASE 6 — Admin Panel & Polish: mở rộng từ `requireRole` + `/api/admin/test`
+- [ ] 4 loại câu hỏi còn lại: FILL_BLANK, MATCHING, CLOZE, TRUE_FALSE_NOT_GIVEN
+      (enum + payload đã thiết kế sẵn, cần thêm renderer + seed)
+- [ ] Bổ sung `coinBalance` vào response của `GET /auth/me` để frontend hiển thị số dư
+      đúng ngay khi tải trang (hiện hiển thị 0 + cộng dồn trong phiên)
+- [ ] Deploy thử (Vercel/Railway/Render) — chú ý cookie sameSite/secure + CORS origin
 
 ## Ghi chú kỹ thuật quan trọng (rút ra trong quá trình làm)
-- Cloud Agent session của Copilot có thể tạo code trên branch/worktree Git riêng
-  (không ghi trực tiếp vào thư mục làm việc) — cần kiểm tra git branch -a /
-  git worktree list NGAY sau mỗi lần AI báo "hoàn thành", xử lý (merge hoặc xoá)
-  ngay lập tức, không để dồn nhiều worktree lồng nhau qua nhiều phiên
-- File quy chuẩn (.md) chỉ đặt baseline, không đảm bảo AI tự tuân thủ 100% — vẫn cần
-  con người verify bằng công cụ khách quan (npx jest --coverage), không tin báo cáo
-  text của AI
-- MCP server chỉ nên cấu hình khi thực sự có hệ thống/dữ liệu thật để kết nối — tránh
-  set up giả (ví dụ database chưa tồn tại) chỉ để "cho có", không mang lại giá trị
-  thực hành thật
-- Coverage 100% ở tầng Controller KHÔNG đảm bảo bảo mật nếu chỉ mock Service — cần
-  Integration Test thật (kết nối DB thật) ở tầng Repository để verify IDOR bị chặn
-  đúng ở tầng query
-- Cấu hình GRANT/REVOKE cho MCP đúng về mặt lý thuyết SQL vẫn cần được verify bằng
-  thao tác thật (thử chạy đúng lệnh bị cấm và xác nhận bị từ chối), không chỉ tin
-  câu lệnh đã chạy thành công là đủ
-- Lỗi "Permission denied"/file lock khi xoá thư mục worktree trên Windows: nếu công
-  cụ như handle64.exe không tìm ra process cụ thể, restart máy là giải pháp nhanh
-  và đáng tin cậy nhất, không cần cố xoay xở thêm
-- Git Worktree KHÔNG portable qua copy/zip thủ công giữa các máy — file .git bên
-  trong worktree lưu đường dẫn tuyệt đối tới repo gốc, đổi máy sẽ hỏng liên kết.
-  Luôn dùng git push/pull để đồng bộ đa máy, không zip/copy thủ công
 
-  ## PIVOT LỚN (2026-08-10): Todo App → Kid English Quiz App
+- Cloud Agent session có thể tạo code trên branch/worktree Git riêng (không ghi trực
+  tiếp vào thư mục làm việc) — kiểm tra `git branch -a` / `git worktree list` NGAY sau
+  mỗi lần AI báo "hoàn thành", merge hoặc xoá liền, không để dồn lồng nhau
+- File quy chuẩn (.md) chỉ đặt baseline — vẫn phải verify bằng công cụ khách quan
+  (`npx jest --coverage`), không tin báo cáo text của AI
+- Coverage 100% ở tầng Controller KHÔNG đảm bảo bảo mật nếu chỉ mock Service — cần
+  Integration Test với DB thật ở tầng Repository để verify IDOR bị chặn đúng tầng query
+- MCP server chỉ cấu hình khi có hệ thống/dữ liệu thật; user phân quyền tối thiểu và
+  phải verify bằng thao tác cấm thật (thử DELETE và xác nhận bị từ chối)
+- Git Worktree KHÔNG portable qua copy/zip thủ công (file .git lưu đường dẫn tuyệt
+  đối) — luôn đồng bộ đa máy bằng git push/pull
+- Lỗi "Permission denied"/file lock khi xoá worktree trên Windows: restart máy là giải
+  pháp nhanh và đáng tin cậy nhất
+- **Refactor cấu trúc KHÔNG kèm nâng cấp môi trường** (version, framework, ngôn ngữ) —
+  đã suýt vỡ project khi refactor frontend bị đổi Tailwind v3→v4 + JSX→TSX; yêu cầu
+  "quy hoạch cấu trúc" chỉ được chạm cấu trúc
+- Frontend KHÔNG lưu token: JWT trong cookie httpOnly + `credentials: 'include'` ở mọi
+  fetch; backend CORS bắt buộc `credentials: true` (đã có)
+- Mọi giá trị score/stars/coin chỉ lấy từ response `POST /submit` — client không tự
+  tính, không tự gửi (nguyên tắc bất biến số 1 của roadmap)
+
+## PIVOT LỚN (2026-08-10): Todo App → Kid English Quiz App
+
 - Dự án chuyển hướng từ Todo App sang "Kid English Quiz App" (ứng dụng luyện tiếng
   Anh gamification cho trẻ em trong gia đình), theo roadmap 6 Phase.
 - QUYẾT ĐỊNH KIẾN TRÚC QUAN TRỌNG: GIỮ NGUYÊN PostgreSQL + Prisma (đã có 100%
   Branch coverage, đã test kỹ) — KHÔNG chuyển sang MongoDB/Mongoose dù roadmap gốc
-  viết theo MongoDB. Mọi model mới (Question, QuizAttempt, CoinTransaction, Reward,
-  RedemptionRequest) phải viết bằng Prisma schema, không phải Mongoose schema.
+  viết theo MongoDB. Mọi model mới phải viết bằng Prisma schema.
 - QUYẾT ĐỊNH KIẾN TRÚC QUAN TRỌNG: GIỮ NGUYÊN hạ tầng Auth hiện có (bcrypt hash
   password + JWT lưu trong httpOnly cookie) — không viết lại từ đầu. Chỉ MỞ RỘNG
   bằng cách thêm field `role` vào model User.
@@ -102,16 +105,27 @@
   - Mọi thao tác ảnh hưởng Coin phải chạy trong 1 database transaction
   - correctAnswer không bao giờ trả về cho Student trong response API
   - Idempotency: 1 QuizAttempt chỉ được tính điểm/cộng Coin đúng 1 lần
-- Thứ tự triển khai bắt buộc theo roadmap: Phase 1 (Authorization) → Phase 2 (Data
-  Model) → Phase 3 (Core Quiz API) → Phase 4 (Streak) → Phase 5 (Leaderboard/Shop)
-  → Phase 6 (Admin Panel & Polish)
-- Roadmap gốc: xem file Kid_English_Quiz_App_Roadmap.pdf đã upload (hoặc lưu vào
-  docs/ nếu muốn tham chiếu lâu dài)
+- Thứ tự triển khai bắt buộc: Phase 1 (Authorization) → Phase 2 (Data Model) →
+  Phase 3 (Core Quiz API) → Phase 4 (Streak) → Phase 5 (Leaderboard/Shop) →
+  Phase 6 (Admin Panel & Polish)
+- Roadmap gốc: file Kid_English_Quiz_App_Roadmap.pdf đã upload
 
-### Phase 1: Backend
-  - [x] PHASE 1 (Kid English Quiz App) — Role-based Authorization: field role
-      (STUDENT/ADMIN) trong User model, middleware requireRole, route test
-      /api/admin/test, seed script tạo Admin. Sự cố: 2 định nghĩa Role trùng nhau
-      (enum tự viết vs Prisma Client) gây lỗi compile hàng loạt sau khi phiên
-      Devin trước bị ngắt giữa chừng — đã audit kỹ và sửa dứt điểm, thống nhất về
-      Prisma Client. 10/10 suites PASS, 81/81 tests PASS, 98.07% Branch coverage.
+### Trạng thái 6 Phase (đánh số để theo dõi)
+
+- [x] **Phase 1** — Role-based Authorization (mục [5])
+- [x] **Phase 2** — Data Model, hoàn thành mức tối giản (mục [7])
+- [x] **Phase 3** — Core Quiz API (mục [8])
+- [ ] **Phase 4** — Streak (chưa bắt đầu)
+- [ ] **Phase 5** — Leaderboard/Shop (frontend có RankingPanel UI dạng mock)
+- [ ] **Phase 6** — Admin Panel & Polish (đã có nền `requireRole` + `/api/admin/test`)
+
+## Nhật ký cập nhật (append-only — chỉ thêm [N+1] ở cuối, KHÔNG sửa mục cũ)
+
+### [1] 2026-08-27 — Quy hoạch Memory Bank theo hiện trạng Kid English
+- `architecture.md` viết lại toàn bộ bám sát code backend/frontend trên master
+  (đọc trực tiếp từ routes/controllers/services/schema, không đoán)
+- `progress.md` đánh số [1]–[10], lược bỏ chi tiết râu ria, thêm bảng trạng thái
+  6 Phase và Nhật ký append-only này
+- Gom tài liệu về 1 mối: xoá bản sao `.github/`, `validators/`, `PROMPTS.md`,
+  `CREATE_FEATURE_GUIDE.md`, `logfile` nằm trong `fullstack-todo-app-jwt-authentication/`
+  (trùng với gốc); `memory-bank/` duy nhất ở gốc repo
