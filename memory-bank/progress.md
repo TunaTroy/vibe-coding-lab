@@ -46,19 +46,25 @@
       `/todos` trước đây bị bỏ quên · tách HomePage 21KB thành PageShell + SideMenu +
       3 widget
 
-## Đang làm
-
-- [ ] [11] Quy hoạch Memory Bank theo hiện trạng & gom tài liệu về 1 mối (2026-08-27):
+- [x] [11] Quy hoạch Memory Bank theo hiện trạng & gom tài liệu về 1 mối (2026-08-27):
       viết lại `architecture.md` bám sát code backend/frontend thật · đánh số progress
       + thêm Nhật ký append-only · xoá các bản sao trùng lặp còn sót TRONG backend
       (`fullstack-todo-app-jwt-authentication/.github/`, `validators/`, `PROMPTS.md`,
       `CREATE_FEATURE_GUIDE.md`, file rác `logfile`) — giữ duy nhất `memory-bank/` ở gốc
 
+- [x] [12] Leaderboard/Shop: thay RankingPanel mock bằng API thật · quyết định
+      ledger CoinTransaction (append-only) TRƯỚC khi làm Shop
+
+## Đang làm
+- [x] [13] 4 loại câu hỏi còn lại: FILL_BLANK, MATCHING, CLOZE, TRUE_FALSE_NOT_GIVEN
+      (enum + payload đã thiết kế sẵn, cần thêm renderer + seed) 
+      Tương ứng với 4 level nữa để qua được cái cửa ải Present Simple.
+
+
 ## Việc tiếp theo (tuỳ chọn, không bắt buộc, mở rộng thêm nếu muốn)
 
 - [ ] PHASE 4 — Streak: model + logic chuỗi ngày học liên tiếp + UI
-- [ ] PHASE 5 — Leaderboard/Shop: thay RankingPanel mock bằng API thật · quyết định
-      ledger CoinTransaction (append-only) TRƯỚC khi làm Shop
+
 - [ ] PHASE 6 — Admin Panel & Polish: mở rộng từ `requireRole` + `/api/admin/test`
 - [ ] 4 loại câu hỏi còn lại: FILL_BLANK, MATCHING, CLOZE, TRUE_FALSE_NOT_GIVEN
       (enum + payload đã thiết kế sẵn, cần thêm renderer + seed)

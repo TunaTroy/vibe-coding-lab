@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { errorHandler } from './middleware/errorHandler';
 import adminRoutes from './routes/adminRoutes';
 import authRoutes from './routes/authRoutes';
+import leaderboardRoutes from './routes/leaderboardRoutes';
 import levelRoutes from './routes/levelRoutes';
 import todoRoutes from './routes/todoRoutes';
 
@@ -28,5 +29,6 @@ app.use('/auth', authRoutes);
 app.use('/todos', todoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/levels', levelRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 app.use(errorHandler);

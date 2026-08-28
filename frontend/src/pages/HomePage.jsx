@@ -8,9 +8,10 @@ import StudyModeCard from "../components/home/StudyModeCard";
 import SidebarNav from "../components/layout/SidebarNav";
 import TopBar from "../components/layout/TopBar";
 import Reveal from "../components/ui/Reveal";
-import { DAILY_TASKS_SEED, RANKING_SEED } from "../data/levels";
+import { DAILY_TASKS_SEED } from "../data/levels";
 import { useAuth } from "../hooks/useAuth";
 import { getErrorMessage } from "../services/api";
+import { fetchLeaderboard } from "../services/leaderboardService";
 import { fetchAllLevels } from "../services/levelService";
 
 /* ============================================================
@@ -23,6 +24,7 @@ export default function HomePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [levels, setLevels] = useState([]);
+  const [players, setPlayers] = useState([]);
   const [error, setError] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -40,6 +42,16 @@ export default function HomePage() {
           navigate("/login");
         }
       });
+    // Bảng xếp hạng: dữ liệu thật từ DB (coinBalance + tổng stars), backend
+    // tự tính rank + đánh dấu isCurrentUser. Lỗi ở đây không đăng xuất user,
+    // chỉ để widget rỗng (không phải thao tác bắt buộc như danh sách level).
+    fetchLeaderboard()
+      .then((res) => {
+        if (mounted) setPlayers(res.players);
+      })
+      .catch(() => {
+        /* widget tự ẩn nếu players rỗng, không cần báo lỗi riêng ở đây */
+      });
     return () => {
       mounted = false;
     };
@@ -47,14 +59,6 @@ export default function HomePage() {
   }, []);
 
   if (!user) return null;
-
-  // Bảng xếp hạng: seed + người chơi hiện tại, sort theo coins
-  const players = [
-    ...RANKING_SEED.map((p) => ({ ...p, rank: 0, isCurrentUser: false })),
-    { rank: 0, name: user.email.split("@")[0], stars: 12, coins: user.coinBalance, isCurrentUser: true },
-  ]
-    .sort((a, b) => b.coins - a.coins)
-    .map((p, i) => ({ ...p, rank: i + 1 }));
 
   const handleLogout = async () => {
     await logout();
