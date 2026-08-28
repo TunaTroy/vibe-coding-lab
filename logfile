@@ -1,0 +1,28 @@
+2026-08-28 11:06:08.194 +07 [14036] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35227, 64-bit
+2026-08-28 11:06:08.198 +07 [14036] LOG:  listening on IPv6 address "::1", port 5432
+2026-08-28 11:06:08.198 +07 [14036] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-08-28 11:06:08.284 +07 [1860] LOG:  database system was interrupted; last known up at 2026-08-27 16:24:32 +07
+2026-08-28 11:06:08.445 +07 [11232] FATAL:  the database system is starting up
+2026-08-28 11:06:08.542 +07 [15772] FATAL:  the database system is starting up
+2026-08-28 11:06:08.575 +07 [3316] FATAL:  the database system is starting up
+2026-08-28 11:06:08.576 +07 [11504] FATAL:  the database system is starting up
+2026-08-28 11:06:08.895 +07 [3312] FATAL:  the database system is starting up
+2026-08-28 11:06:09.038 +07 [13704] FATAL:  the database system is starting up
+2026-08-28 11:06:12.236 +07 [1860] LOG:  database system was not properly shut down; automatic recovery in progress
+2026-08-28 11:06:12.248 +07 [1860] LOG:  redo starts at 0/8CB1E08
+2026-08-28 11:06:12.249 +07 [1860] LOG:  invalid record length at 0/8CB1F10: expected at least 24, got 0
+2026-08-28 11:06:12.249 +07 [1860] LOG:  redo done at 0/8CB1ED8 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+2026-08-28 11:06:12.263 +07 [13244] LOG:  checkpoint starting: end-of-recovery immediate wait
+2026-08-28 11:06:12.313 +07 [13244] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.012 s, total=0.058 s; sync files=2, longest=0.007 s, average=0.006 s; distance=0 kB, estimate=0 kB; lsn=0/8CB1F10, redo lsn=0/8CB1F10
+2026-08-28 11:06:12.355 +07 [14036] LOG:  database system is ready to accept connections
+2026-08-28 11:46:12.398 +07 [13244] LOG:  checkpoint starting: time
+2026-08-28 11:46:12.562 +07 [13244] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.116 s, sync=0.013 s, total=0.164 s; sync files=1, longest=0.013 s, average=0.013 s; distance=1 kB, estimate=1 kB; lsn=0/8CB25E8, redo lsn=0/8CB2590
+2026-08-28 13:25:17.669 +07 [10516] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-08-28 13:25:17.669 +07 [17324] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-08-28 13:25:19.129 +07 [14036] LOG:  client backend (PID 9528) was terminated by exception 0xC000013A
+2026-08-28 13:25:19.129 +07 [14036] DETAIL:  Failed process was running: SELECT "public"."levels"."id", "public"."levels"."tense_id", "public"."levels"."order", "public"."levels"."pass_score", "public"."levels"."coin_reward", "public"."levels"."created_at", "public"."levels"."updated_at" FROM "public"."levels" WHERE "public"."levels"."id" IN ($1) OFFSET $2
+2026-08-28 13:25:19.129 +07 [14036] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2026-08-28 13:25:19.129 +07 [14036] LOG:  terminating any other active server processes
+^C
