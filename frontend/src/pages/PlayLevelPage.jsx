@@ -143,10 +143,18 @@ export default function PlayLevelPage() {
     void handleSubmit();
   };
 
-  // Số câu đúng để hiển thị trong modal — đếm TỪ correctAnswers của backend
+  // Số câu đúng để hiển thị trong modal — đếm TỪ correctAnswers của backend.
+  // BUGFIX: so sánh bằng JSON.stringify (KHÔNG dùng ===) vì MATCHING/CLOZE có
+  // answer dạng number[] — 2 mảng khác instance sẽ luôn !== dù giá trị giống
+  // nhau, khiến Level 3/4 (Nối Câu/Điền Đoạn Văn) hiển thị 0/10 dù backend đã
+  // chấm và cộng coin đúng (backend tự so sánh bằng JSON.stringify, xem
+  // levelService.ts#submitLevel).
   const correctCount = result
-    ? questions.filter((q) => answers[q.id] === result.correctAnswers[q.id])
-        .length
+    ? questions.filter(
+        (q) =>
+          JSON.stringify(answers[q.id]) ===
+          JSON.stringify(result.correctAnswers[q.id]),
+      ).length
     : 0;
 
   const progressPct =
@@ -235,8 +243,11 @@ export default function PlayLevelPage() {
           coinsEarned={result.coinAwarded}
           isWeekendBoost={false}
           onReplay={resetQuiz}
-          onContinue={() => navigate("/levels")}
-  
+          // BUGFIX: "/levels" là route cũ, đã deprecate và tự redirect ra
+          // "/tenses" (xem App.jsx) → luôn văng về màn chọn Thì thay vì quay
+          // lại đúng danh sách Level của Thì đang học. Dùng tenseId của level
+          // hiện tại (level.tenseId — BE mới trả thêm field này).
+          onContinue={() => navigate(`/tenses/${level.tenseId}/levels`)}
         />
       )}
     </PageShell>

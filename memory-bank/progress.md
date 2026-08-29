@@ -55,11 +55,12 @@
 - [x] [12] Leaderboard/Shop: thay RankingPanel mock bằng API thật · quyết định
       ledger CoinTransaction (append-only) TRƯỚC khi làm Shop
 
-
-## Đang làm
 - [x] [13] 4 loại câu hỏi còn lại: FILL_BLANK, MATCHING, CLOZE, TRUE_FALSE_NOT_GIVEN
       (enum + payload đã thiết kế sẵn, cần thêm renderer + seed) 
       Tương ứng với 4 level nữa để qua được cái cửa ải Present Simple.
+
+## Đang làm
+
 
 
 ## Việc tiếp theo (tuỳ chọn, không bắt buộc, mở rộng thêm nếu muốn)
@@ -67,8 +68,6 @@
 - [ ] PHASE 4 — Streak: model + logic chuỗi ngày học liên tiếp + UI
 
 - [ ] PHASE 6 — Admin Panel & Polish: mở rộng từ `requireRole` + `/api/admin/test`
-- [ ] 4 loại câu hỏi còn lại: FILL_BLANK, MATCHING, CLOZE, TRUE_FALSE_NOT_GIVEN
-      (enum + payload đã thiết kế sẵn, cần thêm renderer + seed)
 - [ ] Bổ sung `coinBalance` vào response của `GET /auth/me` để frontend hiển thị số dư
       đúng ngay khi tải trang (hiện hiển thị 0 + cộng dồn trong phiên)
 - [ ] Deploy thử (Vercel/Railway/Render) — chú ý cookie sameSite/secure + CORS origin
