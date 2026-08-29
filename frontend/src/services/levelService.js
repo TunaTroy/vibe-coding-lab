@@ -14,6 +14,16 @@ export async function fetchAllLevels() {
   return apiFetch("/api/levels/");
 }
 
+/** Danh sách Thì (GET /api/tenses) → { tenses: [{id, code, name, order}] }. */
+export async function fetchAllTenses() {
+  return apiFetch("/api/tenses/");
+}
+
+/** Level của một Thì (GET /api/tenses/:tenseId/levels) → { levels }. */
+export async function fetchLevelsByTense(tenseId) {
+  return apiFetch(`/api/tenses/${tenseId}/levels`);
+}
+
 /** Câu hỏi của level — payload.options, KHÔNG kèm đáp án đúng. */
 export async function fetchLevelQuestions(levelId) {
   return apiFetch(`/api/levels/${levelId}/questions`);

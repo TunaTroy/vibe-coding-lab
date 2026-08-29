@@ -67,10 +67,14 @@ export default function PlayLevelPage() {
     return (
       <PageShell user={user} onLogout={handleLogout} active="levels">
         <Card className="p-10 text-center max-w-lg mx-auto">
-          <p className="text-3xl" aria-hidden>🟥</p>
+          <p className="text-3xl" aria-hidden>
+            🟥
+          </p>
           <p className="mt-3 text-sm text-cream/70">{loadError}</p>
           <Link to="/levels">
-            <Button variant="secondary" className="mt-5">← Quay lại danh sách level</Button>
+            <Button variant="secondary" className="mt-5">
+              ← Quay lại danh sách level
+            </Button>
           </Link>
         </Card>
       </PageShell>
@@ -81,7 +85,9 @@ export default function PlayLevelPage() {
     return (
       <PageShell user={user} onLogout={handleLogout} active="levels">
         <div className="flex items-center justify-center py-24">
-          <p className="font-mono text-sm text-cream/50">Đang tải level<span className="cursor-blink">...</span></p>
+          <p className="font-mono text-sm text-cream/50">
+            Đang tải level<span className="cursor-blink">...</span>
+          </p>
         </div>
       </PageShell>
     );
@@ -106,14 +112,20 @@ export default function PlayLevelPage() {
     try {
       const res = await submitLevel(
         level.id,
-        questions.map((q) => ({ questionId: q.id, answer: answers[q.id] ?? -1 }))
+        questions.map((q) => ({
+          questionId: q.id,
+          answer: answers[q.id] ?? -1,
+        })),
       );
       setResult(res);
 
       // Backend đã cộng coin vào DB; cập nhật số dư hiển thị trong phiên
       // (GET /auth/me hiện không trả coinBalance — xem MIGRATION.md)
       if (res.coinAwarded > 0) {
-        refreshUser({ ...user, coinBalance: user.coinBalance + res.coinAwarded });
+        refreshUser({
+          ...user,
+          coinBalance: user.coinBalance + res.coinAwarded,
+        });
       }
       setPhase("done");
     } catch (err) {
@@ -133,17 +145,22 @@ export default function PlayLevelPage() {
 
   // Số câu đúng để hiển thị trong modal — đếm TỪ correctAnswers của backend
   const correctCount = result
-    ? questions.filter((q) => answers[q.id] === result.correctAnswers[q.id]).length
+    ? questions.filter((q) => answers[q.id] === result.correctAnswers[q.id])
+        .length
     : 0;
 
-  const progressPct = total > 0 ? ((index + (phase !== "answering" ? 1 : 0)) / total) * 100 : 0;
+  const progressPct =
+    total > 0 ? ((index + (phase !== "answering" ? 1 : 0)) / total) * 100 : 0;
 
   return (
     <PageShell user={user} onLogout={handleLogout} active="levels">
       <div className="max-w-3xl mx-auto">
         {/* Progress header */}
         <div className="flex items-center gap-4 mb-5">
-          <Link to="/levels" className="font-mono text-xs text-cream/60 hover:text-gold-bright transition-colors shrink-0">
+          <Link
+            to="/levels"
+            className="font-mono text-xs text-cream/60 hover:text-gold-bright transition-colors shrink-0"
+          >
             ← Levels
           </Link>
           <div className="flex-1">
@@ -173,19 +190,29 @@ export default function PlayLevelPage() {
           />
 
           {submitError && (
-            <div role="alert" className="anim-shake mt-5 rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-2.5 text-sm text-[#ff9d92]">
+            <div
+              role="alert"
+              className="anim-shake mt-5 rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-2.5 text-sm text-[#ff9d92]"
+            >
               {submitError}
             </div>
           )}
 
           {phase === "selected" && (
-            <div className="anim-rise mt-7 flex items-center justify-between gap-3">
-              <p className="font-mono text-xs text-cream/50">
-                Đã chọn — đáp án sẽ được chấm khi nộp bài
-              </p>
-              <Button onClick={handleNext}>
-                {isLast ? "Nộp bài 🏁" : "Câu tiếp theo →"}
-              </Button>
+            <div className="anim-rise mt-7">
+              {/* Vấn đề 4 [14]: gợi ý lý thuyết RIÊNG của từng câu (payload.hint) */}
+              <div className="rounded-xl border border-gold/25 bg-gold/10 px-4 py-3 text-sm leading-relaxed text-cream/85">
+                <span className="font-bold text-gold-bright">
+                  💡 Mẹo lý thuyết:{" "}
+                </span>
+                {question.payload?.hint ||
+                  "Đáp án của bạn sẽ được chấm khi nộp bài."}
+              </div>
+              <div className="mt-4 flex justify-end">
+                <Button onClick={handleNext}>
+                  {isLast ? "Nộp bài 🏁" : "Câu tiếp theo →"}
+                </Button>
+              </div>
             </div>
           )}
 
@@ -209,6 +236,7 @@ export default function PlayLevelPage() {
           isWeekendBoost={false}
           onReplay={resetQuiz}
           onContinue={() => navigate("/levels")}
+  
         />
       )}
     </PageShell>

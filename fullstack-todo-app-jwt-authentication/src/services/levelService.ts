@@ -21,6 +21,8 @@ export interface SubmitLevelResult {
 export interface LevelWithProgress {
   id: string;
   order: number;
+  // Tên dạng bài (vd "Trắc Nghiệm", "Nối Câu") — thêm ở Vấn đề 2 [14].
+  name: string;
   tenseName: string;
   isUnlocked: boolean;
   starsEarned: number;
@@ -199,8 +201,18 @@ export class LevelService {
     });
   }
 
-  async getAllLevelsWithProgress(userId: string): Promise<LevelWithProgress[]> {
+  /**
+   * Danh sách Level kèm tiến độ người dùng.
+   * @param tenseId optional — truyền vào để chỉ lấy Level của một Thì (Vấn đề 1 [14]).
+   *                Logic mở khoá (theo order) được tính TRONG tập đã lọc, nên mỗi Thì
+   *                có Level order 1..N độc lập.
+   */
+  async getAllLevelsWithProgress(userId: string, tenseId?: string): Promise<LevelWithProgress[]> {
     const allLevels = await this.levelRepository.findAllLevels();
+
+    // Lọc theo Thì nếu có yêu cầu (mặc định: toàn bộ — giữ tương thích ngược)
+    const levels = tenseId ? allLevels.filter((l: any) => l.tenseId === tenseId) : allLevels;
+
     const userProgress = await this.levelRepository.findAllLevelProgressByUserId(userId);
 
     // Create a map of levelId -> progress for quick lookup
@@ -211,7 +223,7 @@ export class LevelService {
     // Calculate isUnlocked for each level
     // Level 1 is always unlocked
     // Level > 1 is unlocked if previous level has passedAt
-    const levelsWithProgress: LevelWithProgress[] = allLevels.map((level: any) => {
+    const levelsWithProgress: LevelWithProgress[] = levels.map((level: any) => {
       const progress = progressMap.get(level.id);
       const starsEarned = progress?.stars || 0;
 
@@ -220,14 +232,15 @@ export class LevelService {
         return {
           id: level.id,
           order: level.order,
+          name: level.name,
           tenseName: level.tense.name,
           isUnlocked: true,
           starsEarned,
         };
       }
 
-      // For level > 1, check if previous level is passed
-      const previousLevel = allLevels.find((l: any) => l.order === level.order - 1);
+      // For level > 1, check if previous level is passed (trong cùng tập đã lọc)
+      const previousLevel = levels.find((l: any) => l.order === level.order - 1);
       let isUnlocked = false;
 
       if (previousLevel) {
@@ -238,6 +251,7 @@ export class LevelService {
       return {
         id: level.id,
         order: level.order,
+        name: level.name,
         tenseName: level.tense.name,
         isUnlocked,
         starsEarned,

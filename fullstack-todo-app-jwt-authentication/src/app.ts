@@ -8,6 +8,7 @@ import authRoutes from './routes/authRoutes';
 import leaderboardRoutes from './routes/leaderboardRoutes';
 import levelRoutes from './routes/levelRoutes';
 import todoRoutes from './routes/todoRoutes';
+import tenseRoutes from './routes/tenseRoutes'; 
 
 export const app = express();
 
@@ -30,5 +31,6 @@ app.use('/todos', todoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/levels', levelRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/tenses', tenseRoutes);
 
 app.use(errorHandler);

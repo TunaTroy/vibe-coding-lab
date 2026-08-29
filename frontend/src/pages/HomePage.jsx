@@ -73,7 +73,11 @@ export default function HomePage() {
       <div className="arena-noise" aria-hidden />
 
       {/* Sidebar Drawer */}
-      <SidebarNav isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} onLogout={handleLogout} />
+      <SidebarNav
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        onLogout={handleLogout}
+      />
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 py-6">
         {/* TopBar */}
@@ -82,7 +86,10 @@ export default function HomePage() {
         {/* Main Content Container */}
         <div className="bg-gradient-to-b from-[#241f1f]/80 to-[#141010]/80 border-x border-b border-gold/20 rounded-b-2xl p-6 space-y-6">
           {error && (
-            <div role="alert" className="anim-rise rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-3 text-sm text-[#ff9d92]">
+            <div
+              role="alert"
+              className="anim-rise rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-3 text-sm text-[#ff9d92]"
+            >
               {error}
             </div>
           )}
@@ -91,7 +98,10 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 gap-6">
             {/* Cột trái: Chế độ Học */}
             <Reveal delay={40}>
-              <StudyModeCard levelsCount={levels.length} onStart={() => navigate("/levels")} />
+              <StudyModeCard
+                levelsCount={levels.length}
+                onStart={() => navigate("/tenses")}
+              />
             </Reveal>
 
             {/* Cột phải: Chế độ Chiến */}

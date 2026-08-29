@@ -2,15 +2,12 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
 import HomePage from "../pages/HomePage";
-import LeaderboardPage from "../pages/LeaderboardPage";
 import LevelSelectPage from "../pages/LevelSelectPage";
 import LoginPage from "../pages/LoginPage";
 import PlayLevelPage from "../pages/PlayLevelPage";
-import ProfilePage from "../pages/ProfilePage";
 import RegisterPage from "../pages/RegisterPage";
-import ShopPage from "../pages/ShopPage";
+import TenseSelectPage from "../pages/TenseSelectPage";
 import TodoPage from "../pages/TodoPage";
-import WarModePage from "../pages/WarModePage";
 
 /* ============================================================
    App — composition root: guards + route table.
@@ -50,7 +47,10 @@ export default function App() {
   return (
     <Routes>
       {/* Root */}
-      <Route path="/" element={<Navigate to={user ? "/home" : "/login"} replace />} />
+      <Route
+        path="/"
+        element={<Navigate to={user ? "/home" : "/login"} replace />}
+      />
 
       {/* Public */}
       <Route
@@ -79,14 +79,25 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      {/* Chọn Thì → /tenses/:tenseId/levels */}
       <Route
-        path="/levels"
+        path="/tenses"
+        element={
+          <ProtectedRoute>
+            <TenseSelectPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tenses/:tenseId/levels"
         element={
           <ProtectedRoute>
             <LevelSelectPage />
           </ProtectedRoute>
         }
       />
+      {/* /levels cũ → điều hướng về chọn Thì (LevelSelect giờ cần tenseId) */}
+      <Route path="/levels" element={<Navigate to="/tenses" replace />} />
       <Route
         path="/play/:levelId"
         element={
@@ -103,41 +114,12 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/shop"
-        element={
-          <ProtectedRoute>
-            <ShopPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/leaderboard"
-        element={
-          <ProtectedRoute>
-            <LeaderboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/war-mode"
-        element={
-          <ProtectedRoute>
-            <WarModePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to={user ? "/home" : "/login"} replace />} />
+      <Route
+        path="*"
+        element={<Navigate to={user ? "/home" : "/login"} replace />}
+      />
     </Routes>
   );
 }

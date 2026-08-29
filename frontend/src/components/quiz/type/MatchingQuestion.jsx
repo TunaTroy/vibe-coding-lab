@@ -1,12 +1,19 @@
 import { useState } from "react";
 
 /* ============================================================
-   MATCHING — payload: { left: string[], right: string[] }
+   MATCHING — chạm-để-nối (Vấn đề 3a [14]), KHÔNG dùng dropdown.
+   payload: { left: string[], right: string[] }
    answer gửi lên: number[] — answer[i] = index trong "right"
-   mà user ghép với left[i]. correctAnswer: number[] cùng độ dài.
-   User chọn từng cặp qua <select>, được ĐỔI thoải mái khi chưa
-   đủ cặp; khi TẤT CẢ cặp đã chọn → onSelect(mảng) →
-   PlayLevelPage khoá câu hỏi (không sửa được nữa).
+   ghép với left[i]. correctAnswer: number[] cùng độ dài.
+
+   Tương tác:
+   - Chạm 1 chủ ngữ (trái) → highlight "đang chọn".
+   - Chạm 1 động từ (phải) → tạo cặp với chủ ngữ đang chọn (đổi
+     màu + ✓), rồi tự chuyển sang chủ ngữ chưa nối kế tiếp.
+   - Chạm lại 1 cặp đã nối → chọn lại chủ ngữ đó để nối lại.
+   - Động từ bên phải DÙNG LẠI được (không biến mất) vì contract
+     cho phép trùng index.
+   - Khi TẤT CẢ chủ ngữ đã nối → onSelect(number[]) → khoá.
    ============================================================ */
 
 export default function MatchingQuestion({ question, selected, locked, onSelect }) {
@@ -16,16 +23,38 @@ export default function MatchingQuestion({ question, selected, locked, onSelect 
   const [picks, setPicks] = useState(() =>
     Array.isArray(selected) ? [...selected] : Array(left.length).fill(null)
   );
+  // Chủ ngữ đang được chọn để nối (mặc định: ô trống đầu tiên)
+  const [activeLeft, setActiveLeft] = useState(() => {
+    if (Array.isArray(selected)) return null;
+    return 0;
+  });
 
-  const handlePick = (i, value) => {
+  const nextEmpty = (arr) => {
+    const idx = arr.findIndex((p) => p === null);
+    return idx === -1 ? null : idx;
+  };
+
+  const handlePickLeft = (i) => {
     if (locked) return;
+    setActiveLeft(i);
+  };
+
+  const handlePickRight = (rightIndex) => {
+    if (locked || activeLeft === null) return;
+
     const next = [...picks];
-    next[i] = value === "" ? null : Number(value);
+    next[activeLeft] = rightIndex;
     setPicks(next);
 
-    // Chỉ commit khi đã ghép đủ mọi cặp — trước đó user được sửa tự do
-    if (next.every((p) => p !== null)) onSelect(next);
+    // Chuyển sang chủ ngữ chưa nối kế tiếp
+    const upcoming = nextEmpty(next);
+    setActiveLeft(upcoming);
+
+    // Đã nối đủ mọi cặp → commit (PlayLevelPage sẽ khoá câu hỏi)
+    if (upcoming === null) onSelect(next);
   };
+
+  const isPaired = (i) => picks[i] !== null;
 
   return (
     <div className="anim-rise">
@@ -33,38 +62,70 @@ export default function MatchingQuestion({ question, selected, locked, onSelect 
         {question.prompt}
       </h2>
       <p className="mt-2 text-sm text-cream/60">
-        Ghép mỗi chủ ngữ bên trái với động từ đúng bên phải — chọn đủ {left.length} cặp để khoá đáp án.
+        Chạm một <span className="text-gold-bright">chủ ngữ</span>, rồi chạm <span className="text-gold-bright">động từ</span> đúng
+        để nối. Chạm lại cặp đã nối để đổi.
       </p>
 
-      <div className="mt-6 space-y-3">
-        {left.map((subject, i) => (
-          <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <span className="sm:w-44 shrink-0 rounded-xl border-2 border-gold/25 bg-pitch/50 px-4 py-2.5 font-bold text-cream">
-              {subject}
-            </span>
-            <span className="hidden sm:block font-mono text-sm text-gold-deep" aria-hidden>→</span>
-            <select
-              value={picks[i] === null ? "" : picks[i]}
-              disabled={locked}
-              onChange={(e) => handlePick(i, e.target.value)}
-              aria-label={`Động từ cho ${subject}`}
-              className={`flex-1 rounded-xl border-2 px-4 py-2.5 font-semibold outline-none transition-all duration-200
-                disabled:opacity-60
-                ${
-                  picks[i] !== null
-                    ? "border-gold-bright bg-gold/15 text-gold-bright"
-                    : "border-gold/25 bg-pitch/50 text-cream/70 hover:border-gold/60"
-                }`}
-            >
-              <option value="" disabled>— chọn động từ —</option>
-              {right.map((verb, vi) => (
-                <option key={vi} value={vi}>
-                  {verb}
-                </option>
-              ))}
-            </select>
+      <div className="mt-6 grid gap-6 md:grid-cols-2">
+        {/* Cột trái — chủ ngữ */}
+        <div className="space-y-3">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-gold-deep">Chủ ngữ</p>
+          {left.map((subject, i) => {
+            const paired = isPaired(i);
+            const active = activeLeft === i && !locked;
+            return (
+              <button
+                key={i}
+                type="button"
+                disabled={locked}
+                onClick={() => handlePickLeft(i)}
+                className={`w-full flex items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left font-bold transition-all duration-200 disabled:opacity-70
+                  ${
+                    active
+                      ? "border-gold-bright bg-gold/20 text-gold-bright shadow-[0_0_16px_rgba(255,215,0,0.25)] -translate-y-0.5"
+                      : paired
+                      ? "border-gold/60 bg-gold/10 text-cream"
+                      : "border-gold/25 bg-pitch/50 text-cream/80 hover:border-gold/60 hover:-translate-y-0.5"
+                  }`}
+              >
+                <span>{subject}</span>
+                {paired ? (
+                  <span className="flex items-center gap-1.5 font-mono text-sm text-gold-bright">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M2 7.5 5.5 11 12 3.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {right[picks[i]]}
+                  </span>
+                ) : (
+                  <span className="font-mono text-xs text-cream/40">{active ? "chọn động từ →" : "chưa nối"}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Cột phải — động từ (dùng lại được) */}
+        <div className="space-y-3">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-gold-deep">Động từ</p>
+          <div className="flex flex-col gap-3">
+            {right.map((verb, vi) => (
+              <button
+                key={vi}
+                type="button"
+                disabled={locked || activeLeft === null}
+                onClick={() => handlePickRight(vi)}
+                className={`rounded-xl border-2 px-4 py-3 text-center font-bold transition-all duration-200
+                  ${
+                    locked || activeLeft === null
+                      ? "border-gold/20 bg-pitch/40 text-cream/50"
+                      : "border-gold/25 bg-pitch/50 text-cream hover:border-gold-bright hover:bg-gold/15 hover:text-gold-bright hover:-translate-y-0.5 cursor-pointer"
+                  }`}
+              >
+                {verb}
+              </button>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );

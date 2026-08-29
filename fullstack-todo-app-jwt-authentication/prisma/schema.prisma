@@ -64,6 +64,9 @@ model Level {
   id          String   @id @default(cuid())
   tenseId     String   @map("tense_id")
   order       Int
+  // Tên hiển thị của dạng bài (vd "Trắc Nghiệm", "Nối Câu").
+  // @default("") để migrate trên bảng đã có dữ liệu không bị hỏi giá trị mặc định.
+  name        String   @default("")
   passScore   Int      @map("pass_score")
   coinReward  Int      @map("coin_reward")
   createdAt   DateTime @default(now()) @map("created_at")

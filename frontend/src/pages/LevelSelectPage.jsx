@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import PageShell from "../components/layout/PageShell";
 import Button from "../components/ui/Button";
@@ -7,12 +7,14 @@ import Card from "../components/ui/Card";
 import Reveal from "../components/ui/Reveal";
 import { useAuth } from "../hooks/useAuth";
 import { getErrorMessage } from "../services/api";
-import { fetchAllLevels } from "../services/levelService";
+import { fetchLevelsByTense } from "../services/levelService";
 
 /* ============================================================
-   LevelSelectPage — gọi GET /api/levels/ (backend trả sẵn
-   isUnlocked + starsEarned tính từ LevelProgress — FE KHÔNG
-   tự tính mở khóa nữa).
+   LevelSelectPage — Vấn đề 1+2 [14]:
+   - Đọc :tenseId từ route, gọi GET /api/tenses/:tenseId/levels
+     (isUnlocked + starsEarned do backend tính).
+   - Card hiện `level.name` (tên dạng bài) thay vì tenseName —
+     không còn 5 card đều hiện "PRESENT SIMPLE".
    ============================================================ */
 
 /** Icon trang trí theo thứ tự level (backend không lưu icon). */
@@ -38,23 +40,26 @@ function MiniStar({ filled }) {
 export default function LevelSelectPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { tenseId = "" } = useParams();
   const [levels, setLevels] = useState([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!tenseId) return undefined;
     let mounted = true;
-    fetchAllLevels()
+    fetchLevelsByTense(tenseId)
       .then((res) => mounted && setLevels(res.levels))
       .catch((err) => mounted && setError(getErrorMessage(err)));
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [tenseId]);
 
   if (!user) return null;
 
   const totalStars = levels.reduce((sum, l) => sum + l.starsEarned, 0);
   const totalPossible = levels.length * 3;
+  const tenseName = levels[0]?.tenseName ?? "";
 
   const handleLogout = async () => {
     await logout();
@@ -67,7 +72,7 @@ export default function LevelSelectPage() {
         <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-gold-deep">
-              Chương 1 · 12 Thì Tiếng Anh
+              {tenseName || "12 Thì Tiếng Anh"}
             </p>
             <h2 className="font-display mt-1 text-3xl font-extrabold uppercase tracking-wide text-cream">
               Chọn <span className="text-gold-bright">Level</span>
@@ -77,8 +82,8 @@ export default function LevelSelectPage() {
             <p className="font-mono text-sm text-cream/70">
               ⭐ {totalStars}/{totalPossible} sao
             </p>
-            <Link to="/home" className="font-mono text-xs text-cream/60 hover:text-gold-bright transition-colors">
-              ← Về trang chủ
+            <Link to="/tenses" className="font-mono text-xs text-cream/60 hover:text-gold-bright transition-colors">
+              ← Chọn Thì
             </Link>
           </div>
         </div>
@@ -108,8 +113,9 @@ export default function LevelSelectPage() {
                 </span>
               </div>
 
+              {/* Tên DẠNG BÀI riêng của từng level (Vấn đề 2) */}
               <h3 className={`font-display mt-4 text-xl font-bold uppercase tracking-wide ${level.isUnlocked ? "text-cream" : "text-cream/60"}`}>
-                {level.tenseName}
+                {level.name}
               </h3>
               <p className="mt-1 text-[13px] text-cream/60 leading-relaxed">
                 {level.isUnlocked
