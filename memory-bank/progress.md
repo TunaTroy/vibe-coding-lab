@@ -55,6 +55,7 @@
 - [x] [12] Leaderboard/Shop: thay RankingPanel mock bằng API thật · quyết định
       ledger CoinTransaction (append-only) TRƯỚC khi làm Shop
 
+
 ## Đang làm
 - [x] [13] 4 loại câu hỏi còn lại: FILL_BLANK, MATCHING, CLOZE, TRUE_FALSE_NOT_GIVEN
       (enum + payload đã thiết kế sẵn, cần thêm renderer + seed) 

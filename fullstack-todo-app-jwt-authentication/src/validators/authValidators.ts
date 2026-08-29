@@ -45,7 +45,7 @@ export const submitLevelSchema = z.object({
       questionId: z.string(),
       // Thay z.any() bằng union các kiểu answer thật sự có thể có,
       // để tương lai thêm Matching/Cloze (answer dạng string[]) vẫn mở rộng được
-      answer: z.union([z.string(), z.number()]),
+      answer: z.union([z.string(), z.number(), z.array(z.number())]),
     })
   ).min(1),
 });
