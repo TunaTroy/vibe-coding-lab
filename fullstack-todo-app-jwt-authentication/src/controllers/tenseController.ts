@@ -1,16 +1,21 @@
-import { Request, Response } from "express";
-import { TenseService } from "../services/tenseService";
+import { Request, Response } from 'express';
+import { TenseService } from '../services/tenseService';
 
 export class TenseController {
-  constructor(private readonly tenseService: TenseService) {}
+  constructor(private readonly tenseService: TenseService) { }
 
-  /** GET /api/tenses — toàn bộ Thì. */
-  getTenses = async (_req: Request, res: Response): Promise<void> => {
+  /** GET /api/tenses — toàn bộ Thì kèm isUnlocked theo tiến độ. */
+  getTenses = async (req: Request, res: Response): Promise<void> => {
     try {
-      const tenses = await this.tenseService.getAllTenses();
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({ message: 'Unauthorized.' });
+        return;
+      }
+      const tenses = await this.tenseService.getAllTenses(userId);
       res.json({ tenses });
     } catch (err) {
-      res.status(500).json({ message: "Internal server error." });
+      res.status(500).json({ message: 'Internal server error.' });
     }
   };
 
@@ -19,17 +24,14 @@ export class TenseController {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        res.status(401).json({ message: "Unauthorized." });
+        res.status(401).json({ message: 'Unauthorized.' });
         return;
       }
-
-      const tenseId = Array.isArray(req.params.tenseId)
-        ? req.params.tenseId[0]
-        : req.params.tenseId;
+      const tenseId = Array.isArray(req.params.tenseId) ? req.params.tenseId[0] : req.params.tenseId;
       const levels = await this.tenseService.getLevelsByTense(userId, tenseId);
       res.json({ levels });
     } catch (err) {
-      res.status(500).json({ message: "Internal server error." });
+      res.status(500).json({ message: 'Internal server error.' });
     }
   };
 }

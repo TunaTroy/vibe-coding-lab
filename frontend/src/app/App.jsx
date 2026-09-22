@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
+import BossBattlePage from "../pages/BossBattlePage";
 import HomePage from "../pages/HomePage";
 import LevelSelectPage from "../pages/LevelSelectPage";
 import LoginPage from "../pages/LoginPage";
@@ -47,10 +48,7 @@ export default function App() {
   return (
     <Routes>
       {/* Root */}
-      <Route
-        path="/"
-        element={<Navigate to={user ? "/home" : "/login"} replace />}
-      />
+      <Route path="/" element={<Navigate to={user ? "/home" : "/login"} replace />} />
 
       {/* Public */}
       <Route
@@ -106,6 +104,15 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      {/* [15]: Màn Boss Battle cho Level có isBoss=true */}
+      <Route
+        path="/battle/:levelId"
+        element={
+          <ProtectedRoute>
+            <BossBattlePage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/todos"
         element={
@@ -116,10 +123,7 @@ export default function App() {
       />
 
       {/* Fallback */}
-      <Route
-        path="*"
-        element={<Navigate to={user ? "/home" : "/login"} replace />}
-      />
+      <Route path="*" element={<Navigate to={user ? "/home" : "/login"} replace />} />
     </Routes>
   );
 }

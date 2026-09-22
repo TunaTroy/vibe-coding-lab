@@ -1,5 +1,5 @@
-import { LevelRepository } from "../repositories/levelRepository";
-import { prisma } from "../config/prisma";
+import { LevelRepository } from '../repositories/levelRepository';
+import { prisma } from '../config/prisma';
 
 export interface AnswerInput {
   questionId: string;
@@ -23,18 +23,20 @@ export interface LevelWithProgress {
   order: number;
   // Tên dạng bài (vd "Trắc Nghiệm", "Nối Câu") — thêm ở Vấn đề 2 [14].
   name: string;
+  // Level "trùm cuối" — FE hiện card riêng + dẫn vào màn Boss Battle [15].
+  isBoss: boolean;
   tenseName: string;
   isUnlocked: boolean;
   starsEarned: number;
 }
 
 export class LevelService {
-  constructor(private readonly levelRepository: LevelRepository) {}
+  constructor(private readonly levelRepository: LevelRepository) { }
 
   async getFirstLevel() {
     const level = await this.levelRepository.findFirstLevel();
     if (!level) {
-      throw new Error("No levels found.");
+      throw new Error('No levels found.');
     }
     return {
       id: level.id,
@@ -45,11 +47,10 @@ export class LevelService {
   async getLevelQuestions(levelId: string) {
     const level = await this.levelRepository.findLevelById(levelId);
     if (!level) {
-      throw new Error("Level not found.");
+      throw new Error('Level not found.');
     }
 
-    const questions =
-      await this.levelRepository.findQuestionsByLevelId(levelId);
+    const questions = await this.levelRepository.findQuestionsByLevelId(levelId);
 
     // Strip correctAnswer from response
     const questionsWithoutAnswer = questions.map((q) => ({
@@ -64,11 +65,10 @@ export class LevelService {
     return {
       level: {
         id: level.id,
-        // tenseId: cần cho FE điều hướng đúng /tenses/:tenseId/levels sau khi
-        // nộp bài (BUGFIX: trước đây thiếu field này → FE chỉ navigate được
-        // về "/levels", route đã deprecate và redirect ra "/tenses").
-        tenseId: level.tenseId,
         order: level.order,
+        name: (level as any).name ?? '',
+        // [15]: FE dựa vào đây để redirect sang màn Boss Battle.
+        isBoss: (level as any).isBoss ?? false,
         passScore: level.passScore,
         coinReward: level.coinReward,
       },
@@ -76,33 +76,28 @@ export class LevelService {
     };
   }
 
-  async submitLevel(
-    userId: string,
-    input: SubmitLevelInput,
-  ): Promise<SubmitLevelResult> {
+  async submitLevel(userId: string, input: SubmitLevelInput): Promise<SubmitLevelResult> {
     return prisma.$transaction(async (tx) => {
       // Step 1: Verify Level exists
       const level = await this.levelRepository.findLevelById(input.levelId);
       if (!level) {
-        throw new Error("Level not found.");
+        throw new Error('Level not found.');
       }
 
       // Step 1: Verify unlock permission
       if (level.order > 1) {
-        const previousProgress =
-          await this.levelRepository.findPreviousLevelProgress(
-            userId,
-            level.order,
-          );
+        const previousProgress = await this.levelRepository.findPreviousLevelProgress(
+          userId,
+          level.order
+        );
         if (!previousProgress || !previousProgress.passedAt) {
-          throw new Error("Level not unlocked. Complete previous level first.");
+          throw new Error('Level not unlocked. Complete previous level first.');
         }
       }
 
       // Step 2: Get correct answers from DB (NEVER trust client)
       const questionIds = input.answers.map((a) => a.questionId);
-      const questions =
-        await this.levelRepository.findQuestionsByIds(questionIds);
+      const questions = await this.levelRepository.findQuestionsByIds(questionIds);
       const questionMap = new Map(questions.map((q) => [q.id, q]));
 
       // Step 3: Calculate score
@@ -117,10 +112,7 @@ export class LevelService {
 
         correctAnswers[answer.questionId] = question.correctAnswer;
 
-        if (
-          JSON.stringify(answer.answer) ===
-          JSON.stringify(question.correctAnswer)
-        ) {
+        if (JSON.stringify(answer.answer) === JSON.stringify(question.correctAnswer)) {
           correctCount++;
         }
       }
@@ -141,7 +133,7 @@ export class LevelService {
       // Step 5: Check existing progress and determine coin award
       const existingProgress = await this.levelRepository.findLevelProgress(
         userId,
-        input.levelId,
+        input.levelId
       );
 
       let coinAwarded = 0;
@@ -176,10 +168,7 @@ export class LevelService {
           updateData.passedAt = passedAt;
         }
 
-        await this.levelRepository.updateLevelProgress(
-          existingProgress.id,
-          updateData,
-        );
+        await this.levelRepository.updateLevelProgress(existingProgress.id, updateData);
       } else {
         // First time playing
         if (score >= level.passScore) {
@@ -223,23 +212,17 @@ export class LevelService {
    *                Logic mở khoá (theo order) được tính TRONG tập đã lọc, nên mỗi Thì
    *                có Level order 1..N độc lập.
    */
-  async getAllLevelsWithProgress(
-    userId: string,
-    tenseId?: string,
-  ): Promise<LevelWithProgress[]> {
+  async getAllLevelsWithProgress(userId: string, tenseId?: string): Promise<LevelWithProgress[]> {
     const allLevels = await this.levelRepository.findAllLevels();
 
     // Lọc theo Thì nếu có yêu cầu (mặc định: toàn bộ — giữ tương thích ngược)
-    const levels = tenseId
-      ? allLevels.filter((l: any) => l.tenseId === tenseId)
-      : allLevels;
+    const levels = tenseId ? allLevels.filter((l: any) => l.tenseId === tenseId) : allLevels;
 
-    const userProgress =
-      await this.levelRepository.findAllLevelProgressByUserId(userId);
+    const userProgress = await this.levelRepository.findAllLevelProgressByUserId(userId);
 
     // Create a map of levelId -> progress for quick lookup
     const progressMap = new Map(
-      userProgress.map((progress) => [progress.levelId, progress]),
+      userProgress.map((progress) => [progress.levelId, progress])
     );
 
     // Calculate isUnlocked for each level
@@ -255,6 +238,7 @@ export class LevelService {
           id: level.id,
           order: level.order,
           name: level.name,
+          isBoss: level.isBoss ?? false,
           tenseName: level.tense.name,
           isUnlocked: true,
           starsEarned,
@@ -262,21 +246,19 @@ export class LevelService {
       }
 
       // For level > 1, check if previous level is passed (trong cùng tập đã lọc)
-      const previousLevel = levels.find(
-        (l: any) => l.order === level.order - 1,
-      );
+      const previousLevel = levels.find((l: any) => l.order === level.order - 1);
       let isUnlocked = false;
 
       if (previousLevel) {
         const previousProgress = progressMap.get(previousLevel.id);
-        isUnlocked =
-          previousProgress !== undefined && previousProgress.passedAt !== null;
+        isUnlocked = previousProgress !== undefined && previousProgress.passedAt !== null;
       }
 
       return {
         id: level.id,
         order: level.order,
         name: level.name,
+        isBoss: level.isBoss ?? false,
         tenseName: level.tense.name,
         isUnlocked,
         starsEarned,

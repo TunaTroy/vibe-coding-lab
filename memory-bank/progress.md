@@ -61,7 +61,7 @@
 
 ## Đang làm
 
-
+- [x] [14] Level 6 — Boss Battle (bài kiểm tra tổng hợp để mở khoá Thì tiếp theo)
 
 ## Việc tiếp theo (tuỳ chọn, không bắt buộc, mở rộng thêm nếu muốn)
 

@@ -100,16 +100,24 @@ export default function LevelSelectPage() {
           <Reveal key={level.id} delay={i * 90}>
             <Card
               shine={level.isUnlocked}
-              className={`relative p-6 flex flex-col h-full border-2 transition-all duration-300 ${
-                level.isUnlocked
-                  ? "border-gold-deep/50 hover:border-gold-bright hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
+              className={`relative p-6 flex flex-col h-full border-2 transition-all duration-300 ${level.isUnlocked
+                  ? level.isBoss
+                    ? "border-crimson/60 bg-gradient-to-b from-crimson/15 to-transparent hover:border-[#e0394f] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(200,16,46,0.4)]"
+                    : "border-gold-deep/50 hover:border-gold-bright hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
                   : "border-gold/10 opacity-55 grayscale"
-              }`}
+                }`}
             >
               <div className="flex items-start justify-between">
-                <span className="text-4xl" aria-hidden>{level.isUnlocked ? iconFor(level.order) : "🔒"}</span>
-                <span className="font-mono text-[11px] uppercase tracking-wider text-cream/45 border border-gold/20 rounded px-2 py-0.5">
-                  LV.{level.order}
+                <span className="text-4xl" aria-hidden>
+                  {level.isUnlocked ? (level.isBoss ? "🐉" : iconFor(level.order)) : "🔒"}
+                </span>
+                <span
+                  className={`font-mono text-[11px] uppercase tracking-wider rounded px-2 py-0.5 border ${level.isBoss
+                      ? "text-[#e0394f] border-crimson/50 bg-crimson/10"
+                      : "text-cream/45 border-gold/20"
+                    }`}
+                >
+                  {level.isBoss ? "BOSS" : `LV.${level.order}`}
                 </span>
               </div>
 
@@ -119,7 +127,9 @@ export default function LevelSelectPage() {
               </h3>
               <p className="mt-1 text-[13px] text-cream/60 leading-relaxed">
                 {level.isUnlocked
-                  ? `Level ${level.order} · Đã mở khóa, sẵn sàng thi đấu`
+                  ? level.isBoss
+                    ? `Level ${level.order} · Bài kiểm tra tổng hợp, cần ≥80% để mở khoá Thì kế tiếp`
+                    : `Level ${level.order} · Đã mở khóa, sẵn sàng thi đấu`
                   : `Level ${level.order} · Hoàn thành level trước để mở khóa`}
               </p>
 
@@ -134,8 +144,14 @@ export default function LevelSelectPage() {
 
               <div className="mt-5 pt-4 border-t border-gold/15">
                 {level.isUnlocked ? (
-                  <Button className="w-full" onClick={() => navigate(`/play/${level.id}`)}>
-                    {level.starsEarned > 0 ? "Chơi lại ⚽" : "Bắt đầu ⚽"}
+                  <Button
+                    variant={level.isBoss ? "danger" : "primary"}
+                    className="w-full"
+                    onClick={() =>
+                      navigate(level.isBoss ? `/battle/${level.id}` : `/play/${level.id}`)
+                    }
+                  >
+                    {level.isBoss ? "Khiêu chiến ⚔️" : level.starsEarned > 0 ? "Chơi lại ⚽" : "Bắt đầu ⚽"}
                   </Button>
                 ) : (
                   <p className="text-center text-xs text-cream/45 py-2.5">

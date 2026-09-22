@@ -69,41 +69,61 @@ export default function TenseSelectPage() {
       )}
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Thì đã có trong DB — mở khoá */}
-        {tenses.map((tense, i) => (
-          <Reveal key={tense.id} delay={i * 80}>
-            <Card
-              shine
-              role="button"
-              tabIndex={0}
-              onClick={() => navigate(`/tenses/${tense.id}/levels`)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  navigate(`/tenses/${tense.id}/levels`);
-                }
-              }}
-              className="relative p-6 border-2 border-gold-deep/50 cursor-pointer transition-all duration-300 hover:border-gold-bright hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-bright"
-            >
-              <div className="flex items-start justify-between">
-                <span className="text-4xl" aria-hidden>⚽</span>
-                <span className="font-mono text-[11px] uppercase tracking-wider text-cream/45 border border-gold/20 rounded px-2 py-0.5">
-                  Thì {tense.order}
-                </span>
-              </div>
-              <h3 className="font-display mt-4 text-xl font-bold uppercase tracking-wide text-cream">
-                {tense.name}
-              </h3>
-              <p className="mt-1 text-[13px] text-cream/60 leading-relaxed">
-                Đã mở khoá · Sẵn sàng thi đấu
-              </p>
-              <div className="mt-5 pt-4 border-t border-gold/15 flex items-center justify-between">
-                <span className="text-xs font-semibold text-gold-bright">Vào học ngay</span>
-                <span className="text-gold-bright text-lg transition-transform duration-200 group-hover:translate-x-1">→</span>
-              </div>
-            </Card>
-          </Reveal>
-        ))}
+        {/* Thì đã có trong DB — isUnlocked do backend tính theo tiến độ [15] */}
+        {tenses.map((tense, i) =>
+          tense.isUnlocked ? (
+            <Reveal key={tense.id} delay={i * 80}>
+              <Card
+                shine
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/tenses/${tense.id}/levels`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate(`/tenses/${tense.id}/levels`);
+                  }
+                }}
+                className="relative p-6 border-2 border-gold-deep/50 cursor-pointer transition-all duration-300 hover:border-gold-bright hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-bright"
+              >
+                <div className="flex items-start justify-between">
+                  <span className="text-4xl" aria-hidden>⚽</span>
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-cream/45 border border-gold/20 rounded px-2 py-0.5">
+                    Thì {tense.order}
+                  </span>
+                </div>
+                <h3 className="font-display mt-4 text-xl font-bold uppercase tracking-wide text-cream">
+                  {tense.name}
+                </h3>
+                <p className="mt-1 text-[13px] text-cream/60 leading-relaxed">
+                  Đã mở khoá · Sẵn sàng thi đấu
+                </p>
+                <div className="mt-5 pt-4 border-t border-gold/15 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gold-bright">Vào học ngay</span>
+                  <span className="text-gold-bright text-lg transition-transform duration-200 group-hover:translate-x-1">→</span>
+                </div>
+              </Card>
+            </Reveal>
+          ) : (
+            /* Thì CÓ trong DB nhưng chưa mở khoá (chưa hạ Trùm của Thì trước) */
+            <Reveal key={tense.id} delay={i * 80}>
+              <Card className="relative p-6 border-2 border-gold/10 opacity-60 cursor-not-allowed">
+                <div className="flex items-start justify-between">
+                  <span className="text-4xl grayscale" aria-hidden>🔒</span>
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-cream/35 border border-gold/10 rounded px-2 py-0.5">
+                    Thì {tense.order}
+                  </span>
+                </div>
+                <h3 className="font-display mt-4 text-xl font-bold uppercase tracking-wide text-cream/50">
+                  {tense.name}
+                </h3>
+                <p className="mt-1 text-[13px] text-cream/40 leading-relaxed">
+                  Hạ Trùm của Thì trước để mở khoá
+                </p>
+              </Card>
+            </Reveal>
+          )
+        )}
 
         {/* Thì chưa có data — khoá "Sắp ra mắt" (không bịa data) */}
         {Array.from({ length: lockedCount }).map((_, i) => (

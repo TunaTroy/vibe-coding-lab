@@ -4,8 +4,10 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 /* ============================================================
-   Seed Present Simple — 5 Level × 10 câu (cập nhật [14]).
+   Seed Present Simple — 5 Level × 10 câu + Level 6 Boss (cập nhật [15]).
    - Mỗi Level có `name` (tên dạng bài) — Vấn đề 2.
+   - Level 6 "Đại Chiến Trùm Cuối": isBoss=true, passScore=80, coinReward=150,
+     18 câu TRỘN đủ 5 loại dễ→khó — bài kiểm tra mở khoá Thì kế tiếp.
    - MỌI câu hỏi có payload.hint = câu quy tắc ngữ pháp — Vấn đề 4.
      (Riêng FILL_BLANK: `hint` đổi ý nghĩa thành câu lý thuyết,
      KHÔNG còn là nguyên mẫu động từ gợi ý đáp án.)
@@ -89,6 +91,69 @@ const L5 = [
   { prompt: 'Đọc đoạn văn và chọn đáp án đúng.', passage: 'The children sing and dance at school.', statement: 'The children sing at school.', correctAnswer: 'TRUE', hint: 'Hát (sing) được nhắc đến trong đoạn văn.' },
 ];
 
+/* ---------------- Level 6 — Đại Chiến Trùm Cuối (BOSS) ----------------
+   Trộn đủ 5 loại câu hỏi, sắp xếp DỄ → KHÓ theo order. [15]
+   - Mỗi row tự mang `type`; builder đọc row.type để dựng payload.
+   - correctAnswer CHỈ string / number / mảng phẳng — KHÔNG object.
+   - passScore 80 (khó hơn 5 Level thường), coinReward 150.
+-------------------------------------------------------------------- */
+const L6_BOSS = [
+  // --- Dễ (khởi động) ---
+  { type: QuestionType.MULTIPLE_CHOICE, prompt: 'She ___ to school every day.', options: ['go', 'goes', 'going', 'went'], correctAnswer: 1, hint: 'Chủ ngữ số ít (she) → động từ thêm -s/-es.' },
+  { type: QuestionType.TRUE_FALSE_NOT_GIVEN, prompt: 'Đọc đoạn văn và chọn đáp án đúng.', passage: 'Tom likes apples.', statement: 'Tom likes apples.', correctAnswer: 'TRUE', hint: 'Câu nhận định giống hệt đoạn văn.' },
+  { type: QuestionType.FILL_BLANK, prompt: 'Điền động từ đúng: They ___ football on weekends.', sentence: 'They ___ football on weekends.', correctAnswer: 'play', hint: 'Chủ ngữ số nhiều (they) → động từ giữ nguyên.' },
+  // --- Trung bình ---
+  { type: QuestionType.MULTIPLE_CHOICE, prompt: 'He ___ not like coffee.', options: ['do', 'does', 'is', 'are'], correctAnswer: 1, hint: 'Phủ định với he/she/it dùng "does not" + V nguyên mẫu.' },
+  { type: QuestionType.MATCHING, prompt: 'Nối chủ ngữ với động từ đúng.', left: ['I', 'She', 'They', 'He'], right: ['go', 'goes'], correctAnswer: [0, 1, 0, 1], hint: 'I/they → go; she/he → goes.' },
+  { type: QuestionType.CLOZE, prompt: 'Chọn từ đúng trong ngân hàng để điền vào chỗ trống.', segments: ['Every morning, Tom ', ' up early and ', ' his teeth.'], bank: ['get', 'gets', 'brush', 'brushes'], correctAnswer: [1, 3], hint: 'Tom số ít → get→gets, brush→brushes.' },
+  { type: QuestionType.FILL_BLANK, prompt: 'Điền động từ đúng: My father ___ TV in the evening.', sentence: 'My father ___ TV in the evening.', correctAnswer: 'watches', hint: '"My father" số ít; watch tận cùng -ch → thêm -es.' },
+  { type: QuestionType.MULTIPLE_CHOICE, prompt: '___ she live in Hanoi?', options: ['Do', 'Does', 'Is', 'Are'], correctAnswer: 1, hint: 'Câu hỏi với she/he/it bắt đầu bằng "Does".' },
+  // --- Khó ---
+  { type: QuestionType.TRUE_FALSE_NOT_GIVEN, prompt: 'Đọc đoạn văn và chọn đáp án đúng.', passage: 'My mother is a doctor.', statement: 'My mother works in a hospital.', correctAnswer: 'NOT_GIVEN', hint: 'Đoạn văn chỉ nói nghề nghiệp, không nói nơi làm việc.' },
+  { type: QuestionType.MATCHING, prompt: 'Nối chủ ngữ với động từ đúng.', left: ['She', 'They', 'He', 'We'], right: ['watch', 'watches'], correctAnswer: [1, 0, 1, 0], hint: 'she/he → watches; they/we → watch.' },
+  { type: QuestionType.CLOZE, prompt: 'Chọn từ đúng trong ngân hàng để điền vào chỗ trống.', segments: ['My sister ', ' English and ', ' songs.'], bank: ['study', 'studies', 'sing', 'sings'], correctAnswer: [1, 3], hint: 'My sister = she → study→studies, sing→sings.' },
+  { type: QuestionType.FILL_BLANK, prompt: 'Điền động từ đúng: She ___ her teeth twice a day.', sentence: 'She ___ her teeth twice a day.', correctAnswer: 'brushes', hint: '"She" số ít; brush tận cùng -sh → thêm -es.' },
+  { type: QuestionType.MULTIPLE_CHOICE, prompt: 'The sun ___ in the east.', options: ['rise', 'rises', 'rising', 'rose'], correctAnswer: 1, hint: 'Sự thật hiển nhiên dùng Present Simple; "the sun" số ít → rises.' },
+  // --- Rất khó (trùm) ---
+  { type: QuestionType.MATCHING, prompt: 'Nối chủ ngữ với động từ đúng.', left: ['He', 'I', 'She', 'They'], right: ['do', 'does'], correctAnswer: [1, 0, 1, 0], hint: 'he/she → does; I/they → do.' },
+  { type: QuestionType.CLOZE, prompt: 'Chọn từ đúng trong ngân hàng để điền vào chỗ trống.', segments: ['The bird ', ' in the tree and ', ' happily.'], bank: ['sit', 'sits', 'sing', 'sings'], correctAnswer: [1, 3], hint: 'The bird số ít → sit→sits, sing→sings.' },
+  { type: QuestionType.TRUE_FALSE_NOT_GIVEN, prompt: 'Đọc đoạn văn và chọn đáp án đúng.', passage: 'Ben plays football on Sundays.', statement: 'Ben plays football on Saturdays.', correctAnswer: 'FALSE', hint: 'Đoạn văn nói Chủ Nhật, không phải Thứ Bảy.' },
+  { type: QuestionType.FILL_BLANK, prompt: 'Điền động từ đúng: My mother ___ dinner at 7 PM.', sentence: 'My mother ___ dinner at 7 PM.', correctAnswer: 'cooks', hint: '"My mother" = she → động từ thêm -s.' },
+  { type: QuestionType.MULTIPLE_CHOICE, prompt: '___ you speak English?', options: ['Do', 'Does', 'Is', 'Are'], correctAnswer: 0, hint: 'Câu hỏi với you/we/they bắt đầu bằng "Do".' },
+];
+
+/* ---------------- Build payload cho Boss (trộn 5 loại) ---------------- */
+function buildBossQuestions(rows: any[]) {
+  return rows.map((row, i) => {
+    const type = row.type as QuestionType;
+    let payload: any;
+    switch (type) {
+      case QuestionType.MULTIPLE_CHOICE:
+        payload = { options: row.options, hint: row.hint };
+        break;
+      case QuestionType.FILL_BLANK:
+        payload = { sentence: row.sentence, hint: row.hint };
+        break;
+      case QuestionType.MATCHING:
+        payload = { left: row.left, right: row.right, hint: row.hint };
+        break;
+      case QuestionType.CLOZE:
+        payload = { segments: row.segments, bank: row.bank, hint: row.hint };
+        break;
+      case QuestionType.TRUE_FALSE_NOT_GIVEN:
+        payload = { passage: row.passage, statement: row.statement, hint: row.hint };
+        break;
+    }
+    return {
+      type,
+      prompt: row.prompt,
+      payload,
+      correctAnswer: row.correctAnswer,
+      order: i + 1,
+    };
+  });
+}
+
 /* ---------------- Build payload theo từng loại ---------------- */
 function buildQuestions(type: QuestionType, rows: any[]) {
   return rows.map((row, i) => {
@@ -126,6 +191,8 @@ const LEVELS = [
   { order: 3, name: 'Nối Câu', type: QuestionType.MATCHING, questions: buildQuestions(QuestionType.MATCHING, L3) },
   { order: 4, name: 'Điền Đoạn Văn', type: QuestionType.CLOZE, questions: buildQuestions(QuestionType.CLOZE, L4) },
   { order: 5, name: 'Đúng / Sai / Không Đề Cập', type: QuestionType.TRUE_FALSE_NOT_GIVEN, questions: buildQuestions(QuestionType.TRUE_FALSE_NOT_GIVEN, L5) },
+  // Level 6 — Boss Battle: bài kiểm tra tổng hợp mở khoá Thì kế tiếp [15].
+  { order: 6, name: 'Đại Chiến Trùm Cuối', type: null, isBoss: true, passScore: 80, coinReward: 150, questions: buildBossQuestions(L6_BOSS) },
 ];
 
 async function main() {
@@ -165,11 +232,16 @@ async function main() {
       where: { tenseId: tense.id, order: def.order },
     });
 
+    // [15]: passScore/coinReward/isBoss đọc từ def (mặc định của 5 Level thường).
+    const passScore = def.passScore ?? 70;
+    const coinReward = def.coinReward ?? 50;
+    const isBoss = def.isBoss ?? false;
+
     if (level) {
-      // Đã có → cập nhật tên dạng bài (Vấn đề 2)
+      // Đã có → cập nhật tên + cờ boss (idempotent, hội tụ về đúng cấu hình)
       level = await prisma.level.update({
         where: { id: level.id },
-        data: { name: def.name },
+        data: { name: def.name, passScore, coinReward, isBoss },
       });
     } else {
       level = await prisma.level.create({
@@ -177,8 +249,9 @@ async function main() {
           tenseId: tense.id,
           order: def.order,
           name: def.name,
-          passScore: 70,
-          coinReward: 50,
+          passScore,
+          coinReward,
+          isBoss,
         },
       });
       console.log(`Level ${def.order} created:`, def.name);
