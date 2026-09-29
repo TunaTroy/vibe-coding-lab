@@ -1,6 +1,11 @@
 // Mock prisma import BEFORE importing levelService
 const mockPrisma = {
   $transaction: jest.fn(),
+  $queryRaw: jest.fn(),
+  level: { findUnique: jest.fn() },
+  levelProgress: { findUnique: jest.fn() },
+  bossCheckpoint: { findUnique: jest.fn(), findMany: jest.fn() },
+  bossProgress: { findMany: jest.fn() },
 };
 
 jest.mock('../config/prisma', () => ({
@@ -9,6 +14,7 @@ jest.mock('../config/prisma', () => ({
 
 // Mock LevelRepository
 const mockLevelRepository = {
+  withClient: jest.fn(),
   findLevelById: jest.fn(),
   findQuestionsByLevelId: jest.fn(),
   findQuestionsByIds: jest.fn(),
@@ -34,6 +40,18 @@ describe('LevelService (unit tests)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLevelRepository.withClient.mockReturnValue(mockLevelRepository);
+    mockPrisma.bossCheckpoint.findMany.mockResolvedValue([]);
+    mockPrisma.bossProgress.findMany.mockResolvedValue([]);
+    mockLevelRepository.findQuestionsByLevelId.mockImplementation(() => mockLevelRepository.findQuestionsByIds());
+    mockPrisma.level.findUnique.mockImplementation(async ({ where }: any) => {
+      const levels = await mockLevelRepository.findAllLevels();
+      return levels?.find((l: any) => l.tenseId === where.tenseId_order.tenseId && l.order === where.tenseId_order.order) ?? null;
+    });
+    mockPrisma.levelProgress.findUnique.mockImplementation(async ({ where }: any) => {
+      const progress = await mockLevelRepository.findAllLevelProgressByUserId(where.userId_levelId.userId);
+      return progress?.find((p: any) => p.levelId === where.userId_levelId.levelId) ?? null;
+    });
     // Create new instance with mocked repository
     levelService = new LevelService(new (LevelRepository as any)());
   });
@@ -56,7 +74,7 @@ describe('LevelService (unit tests)', () => {
       mockLevelRepository.findLevelById.mockResolvedValue(mockLevel);
       mockLevelRepository.findQuestionsByLevelId.mockResolvedValue(mockQuestions);
 
-      const result = await levelService.getLevelQuestions('level1');
+      const result = await levelService.getLevelQuestions('level1', 'user1');
 
       expect(result.level).toMatchObject({
         id: 'level1',
@@ -81,7 +99,7 @@ describe('LevelService (unit tests)', () => {
     it('should throw error if level not found', async () => {
       mockLevelRepository.findLevelById.mockResolvedValue(null);
 
-      await expect(levelService.getLevelQuestions('invalid')).rejects.toThrow('Level not found.');
+      await expect(levelService.getLevelQuestions('invalid', 'user1')).rejects.toThrow('Level not found.');
     });
   });
 
@@ -440,6 +458,8 @@ describe('LevelService (unit tests)', () => {
         id: 'prev1',
         passedAt: new Date(),
       };
+      mockPrisma.level.findUnique.mockResolvedValue({ id: 'level1' });
+      mockPrisma.levelProgress.findUnique.mockResolvedValue(mockPreviousProgress);
 
       mockPrisma.$transaction.mockImplementation(async (callback) => {
         mockLevelRepository.findLevelById.mockResolvedValue(mockLevel);
@@ -500,7 +520,7 @@ describe('LevelService (unit tests)', () => {
           levelId: 'level1',
           answers: [{ questionId: 'q1', answer: 1 }],
         })
-      ).rejects.toThrow('Question q1 not found.');
+      ).rejects.toThrow('Submission must include each level question exactly once.');
     });
 
     it('should throw error if level not found', async () => {

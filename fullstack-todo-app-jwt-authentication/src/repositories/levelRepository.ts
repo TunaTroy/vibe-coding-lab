@@ -1,4 +1,7 @@
+import { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '../config/prisma';
+
+export type DatabaseClient = PrismaClient | Prisma.TransactionClient;
 
 export interface QuestionRecord {
   id: string;
@@ -29,28 +32,24 @@ export interface LevelProgressRecord {
 }
 
 export class LevelRepository {
+  constructor(private readonly db: DatabaseClient = prisma) {}
+  withClient(db: DatabaseClient) { return new LevelRepository(db); }
   async findLevelById(levelId: string): Promise<LevelRecord | null> {
-    return prisma.level.findUnique({
+    return this.db.level.findUnique({
       where: { id: levelId },
     });
   }
 
   async findFirstLevel(): Promise<LevelRecord | null> {
-    return prisma.level.findFirst({
+    return this.db.level.findFirst({
       where: { order: 1 },
     });
   }
 
   async findQuestionsByLevelId(levelId: string): Promise<QuestionRecord[]> {
-    return prisma.question.findMany({
+    return this.db.question.findMany({
       where: { levelId },
       orderBy: { order: 'asc' },
-    });
-  }
-
-  async findQuestionsByIds(questionIds: string[]): Promise<QuestionRecord[]> {
-    return prisma.question.findMany({
-      where: { id: { in: questionIds } },
     });
   }
 
@@ -58,33 +57,11 @@ export class LevelRepository {
     userId: string,
     levelId: string
   ): Promise<LevelProgressRecord | null> {
-    return prisma.levelProgress.findUnique({
+    return this.db.levelProgress.findUnique({
       where: {
         userId_levelId: {
           userId,
           levelId,
-        },
-      },
-    });
-  }
-
-  async findPreviousLevelProgress(
-    userId: string,
-    currentLevelOrder: number
-  ): Promise<LevelProgressRecord | null> {
-    const previousLevel = await prisma.level.findFirst({
-      where: { order: currentLevelOrder - 1 },
-    });
-
-    if (!previousLevel) {
-      return null;
-    }
-
-    return prisma.levelProgress.findUnique({
-      where: {
-        userId_levelId: {
-          userId,
-          levelId: previousLevel.id,
         },
       },
     });
@@ -97,7 +74,7 @@ export class LevelRepository {
     stars: number;
     passedAt: Date | null;
   }): Promise<LevelProgressRecord> {
-    return prisma.levelProgress.create({
+    return this.db.levelProgress.create({
       data,
     });
   }
@@ -111,7 +88,7 @@ export class LevelRepository {
       lastPlayedAt?: Date;
     }
   ): Promise<LevelProgressRecord> {
-    return prisma.levelProgress.update({
+    return this.db.levelProgress.update({
       where: { id },
       data,
     });
@@ -122,13 +99,13 @@ export class LevelRepository {
     amount: number;
     reason: string;
   }): Promise<any> {
-    return prisma.coinTransaction.create({
+    return this.db.coinTransaction.create({
       data,
     });
   }
 
   async updateUserCoinBalance(userId: string, amount: number): Promise<any> {
-    return prisma.user.update({
+    return this.db.user.update({
       where: { id: userId },
       data: {
         coinBalance: {
@@ -139,7 +116,7 @@ export class LevelRepository {
   }
 
   async findAllLevels(): Promise<any[]> {
-    return prisma.level.findMany({
+    return this.db.level.findMany({
       include: {
         tense: true,
       },
@@ -148,7 +125,7 @@ export class LevelRepository {
   }
 
   async findAllLevelProgressByUserId(userId: string): Promise<LevelProgressRecord[]> {
-    return prisma.levelProgress.findMany({
+    return this.db.levelProgress.findMany({
       where: { userId },
       include: {
         level: true,

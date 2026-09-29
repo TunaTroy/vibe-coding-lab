@@ -1,14 +1,20 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
-import BossBattlePage from "../pages/BossBattlePage";
+import AuthenticatedLayout from "../components/layout/AuthenticatedLayout";
 import HomePage from "../pages/HomePage";
+import LeaderboardPage from "../pages/LeaderboardPage";
 import LevelSelectPage from "../pages/LevelSelectPage";
 import LoginPage from "../pages/LoginPage";
+import NotFoundPage from "../pages/NotFoundPage";
 import PlayLevelPage from "../pages/PlayLevelPage";
+import ProfilePage from "../pages/ProfilePage";
 import RegisterPage from "../pages/RegisterPage";
+import ShopPage from "../pages/ShopPage";
 import TenseSelectPage from "../pages/TenseSelectPage";
 import TodoPage from "../pages/TodoPage";
+import WarModePage from "../pages/WarModePage";
+import BossBattlePage from "../pages/BossBattlePage";
 
 /* ============================================================
    App — composition root: guards + route table.
@@ -68,62 +74,24 @@ export default function App() {
         }
       />
 
-      {/* Protected */}
-      <Route
-        path="/home"
-        element={
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
-        }
-      />
-      {/* Chọn Thì → /tenses/:tenseId/levels */}
-      <Route
-        path="/tenses"
-        element={
-          <ProtectedRoute>
-            <TenseSelectPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/tenses/:tenseId/levels"
-        element={
-          <ProtectedRoute>
-            <LevelSelectPage />
-          </ProtectedRoute>
-        }
-      />
-      {/* /levels cũ → điều hướng về chọn Thì (LevelSelect giờ cần tenseId) */}
-      <Route path="/levels" element={<Navigate to="/tenses" replace />} />
-      <Route
-        path="/play/:levelId"
-        element={
-          <ProtectedRoute>
-            <PlayLevelPage />
-          </ProtectedRoute>
-        }
-      />
-      {/* [15]: Màn Boss Battle cho Level có isBoss=true */}
-      <Route
-        path="/battle/:levelId"
-        element={
-          <ProtectedRoute>
-            <BossBattlePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/todos"
-        element={
-          <ProtectedRoute>
-            <TodoPage />
-          </ProtectedRoute>
-        }
-      />
+      {/* One navigation shell for every authenticated screen. */}
+      <Route element={<ProtectedRoute><AuthenticatedLayout /></ProtectedRoute>}>
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/tenses" element={<TenseSelectPage />} />
+        <Route path="/tenses/:tenseId/levels" element={<LevelSelectPage />} />
+        <Route path="/levels" element={<Navigate to="/tenses" replace />} />
+        <Route path="/play/:levelId" element={<PlayLevelPage />} />
+        <Route path="/todos" element={<TodoPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/shop" element={<ShopPage />} />
+        <Route path="/war-mode" element={<WarModePage />} />
+      </Route>
+
+      <Route path="/bosses/:bossId" element={<ProtectedRoute><BossBattlePage /></ProtectedRoute>} />
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to={user ? "/home" : "/login"} replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

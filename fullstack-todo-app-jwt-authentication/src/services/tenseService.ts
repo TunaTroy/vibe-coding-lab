@@ -15,11 +15,17 @@ export class TenseService {
   /**
    * Toàn bộ Thì kèm trạng thái mở khoá THEO TIẾN ĐỘ THẬT:
    * - order === 1: luôn mở.
-   * - order > 1: mở NẾU user đã pass (passedAt != null) Level boss của Thì liền trước.
-   *   Thì liền trước chưa có Level boss nào (vd chưa seed) → khoá (an toàn, không crash).
+   * - order > 1: mở khi đã vượt qua BossCheckpoint cuối cùng đã xuất bản
+   *   của Thì liền trước. Chưa có checkpoint → khóa.
    */
   async getAllTenses(userId: string): Promise<TenseWithUnlock[]> {
-    const tenses = await this.tenseRepository.findAllTensesWithBossLevels();
+    const tenses = await this.tenseRepository.findAllTenses();
+    const bosses = await this.tenseRepository.findPublishedBosses(tenses.map(tense => tense.id));
+    const passed = new Set((await this.tenseRepository.findPassedBossIds(userId, bosses.map(boss => boss.id))).map(progress => progress.bossId));
+    const finalBossByTense = new Map<string, string>();
+    for (const boss of bosses) {
+      if (!finalBossByTense.has(boss.tenseId)) finalBossByTense.set(boss.tenseId, boss.id);
+    }
 
     const result: TenseWithUnlock[] = [];
     for (const tense of tenses) {
@@ -35,19 +41,9 @@ export class TenseService {
         continue;
       }
 
-      let isUnlocked = false;
       const prevTense = tenses.find((t) => t.order === tense.order - 1);
-      if (prevTense) {
-        const bossLevel = prevTense.levels.find((l) => l.isBoss);
-        if (bossLevel) {
-          const progress = await this.tenseRepository.findLevelProgressByUserIdAndLevelId(
-            userId,
-            bossLevel.id
-          );
-          isUnlocked = progress !== null && progress.passedAt !== null;
-        }
-      }
-
+      const requiredBossId = prevTense ? finalBossByTense.get(prevTense.id) : undefined;
+      const isUnlocked = Boolean(requiredBossId && passed.has(requiredBossId));
       result.push({ ...base, isUnlocked });
     }
 

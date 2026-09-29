@@ -16,7 +16,7 @@ import { useState } from "react";
    - Khi TẤT CẢ chủ ngữ đã nối → onSelect(number[]) → khoá.
    ============================================================ */
 
-export default function MatchingQuestion({ question, selected, locked, onSelect }) {
+export default function MatchingQuestion({ question, selected, locked, onSelect, draftMode = false }) {
   const left = question.payload?.left ?? [];
   const right = question.payload?.right ?? [];
 
@@ -51,7 +51,7 @@ export default function MatchingQuestion({ question, selected, locked, onSelect 
     setActiveLeft(upcoming);
 
     // Đã nối đủ mọi cặp → commit (PlayLevelPage sẽ khoá câu hỏi)
-    if (upcoming === null) onSelect(next);
+    if (draftMode || upcoming === null) onSelect(next);
   };
 
   const isPaired = (i) => picks[i] !== null;

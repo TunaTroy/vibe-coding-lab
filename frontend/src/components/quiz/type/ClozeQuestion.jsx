@@ -26,7 +26,7 @@ function shuffleIndices(n) {
   return arr;
 }
 
-export default function ClozeQuestion({ question, selected, locked, onSelect }) {
+export default function ClozeQuestion({ question, selected, locked, onSelect, draftMode = false }) {
   const segments = question.payload?.segments ?? [];
   const bank = question.payload?.bank ?? [];
   const numBlanks = Math.max(0, segments.length - 1);
@@ -43,7 +43,7 @@ export default function ClozeQuestion({ question, selected, locked, onSelect }) 
   const usedWords = new Set(choices.filter((c) => c !== null));
 
   const commitIfComplete = (next) => {
-    if (next.every((c) => c !== null)) onSelect(next);
+    if (draftMode || next.every((c) => c !== null)) onSelect(next);
   };
 
   const handleTapWord = (originalIndex) => {
@@ -77,6 +77,7 @@ export default function ClozeQuestion({ question, selected, locked, onSelect }) 
       next[blankIndex] = null;
       setChoices(next);
       setHeld(null);
+      if (draftMode) onSelect(next);
     } else {
       // Ô trống → chọn ô, chờ chạm từ
       setHeld({ kind: "blank", index: blankIndex });

@@ -20,6 +20,11 @@ enum QuestionType {
   TRUE_FALSE_NOT_GIVEN
 }
 
+enum BossAttemptStatus {
+  ACTIVE
+  COMPLETED
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -32,6 +37,8 @@ model User {
   todos        Todo[]
   levelProgress LevelProgress[]
   coinTransactions CoinTransaction[]
+  bossProgress BossProgress[]
+  bossAttempts BossAttempt[]
 
   @@map("users")
 }
@@ -56,6 +63,7 @@ model Tense {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   levels    Level[]
+  bosses    BossCheckpoint[]
 
   @@map("tenses")
 }
@@ -77,6 +85,9 @@ model Level {
   tense       Tense    @relation(fields: [tenseId], references: [id], onDelete: Cascade)
   questions   Question[]
   levelProgress LevelProgress[]
+  bossQuestions BossQuestion[]
+
+  @@unique([tenseId, order])
 
   @@map("levels")
 }
@@ -122,4 +133,104 @@ model CoinTransaction {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("coin_transactions")
+}
+
+model BossCheckpoint {
+  id            String   @id @default(cuid())
+  tenseId       String   @map("tense_id")
+  groupIndex    Int      @map("group_index")
+  sourceStart   Int      @map("source_start")
+  sourceEnd     Int      @map("source_end")
+  name          String
+  published     Boolean  @default(false)
+  passThreshold Int      @default(7) @map("pass_threshold")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  tense         Tense    @relation(fields: [tenseId], references: [id], onDelete: Cascade)
+  questions     BossQuestion[]
+  progress      BossProgress[]
+  attempts      BossAttempt[]
+
+  @@unique([tenseId, groupIndex])
+  @@index([tenseId, sourceEnd])
+  @@map("boss_checkpoints")
+}
+
+model BossQuestion {
+  id            String       @id @default(cuid())
+  bossId        String       @map("boss_id")
+  sourceLevelId String       @map("source_level_id")
+  code          String
+  type          QuestionType
+  prompt        String
+  payload       Json
+  correctAnswer Json         @map("correct_answer")
+  explanation   String
+  published     Boolean      @default(false)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  boss          BossCheckpoint @relation(fields: [bossId], references: [id], onDelete: Cascade)
+  sourceLevel   Level        @relation(fields: [sourceLevelId], references: [id], onDelete: Restrict)
+  attemptQuestions BossAttemptQuestion[]
+
+  @@unique([bossId, code])
+  @@index([bossId, sourceLevelId, published])
+  @@map("boss_questions")
+}
+
+model BossProgress {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  bossId     String    @map("boss_id")
+  bestScore  Int       @default(0) @map("best_score")
+  bestStars  Int       @default(0) @map("best_stars")
+  passedAt   DateTime? @map("passed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  boss       BossCheckpoint @relation(fields: [bossId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bossId])
+  @@map("boss_progress")
+}
+
+model BossAttempt {
+  id              String            @id @default(cuid())
+  userId          String            @map("user_id")
+  bossId          String            @map("boss_id")
+  status          BossAttemptStatus @default(ACTIVE)
+  currentPosition Int               @default(1) @map("current_position")
+  correctCount    Int               @default(0) @map("correct_count")
+  version         Int               @default(0)
+  startedAt       DateTime          @default(now()) @map("started_at")
+  completedAt     DateTime?         @map("completed_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  boss            BossCheckpoint    @relation(fields: [bossId], references: [id], onDelete: Cascade)
+  questions       BossAttemptQuestion[]
+
+  @@index([userId, bossId, status])
+  @@map("boss_attempts")
+}
+
+model BossAttemptQuestion {
+  id            String       @id @default(cuid())
+  attemptId     String       @map("attempt_id")
+  bossQuestionId String      @map("boss_question_id")
+  sourceLevelId String       @map("source_level_id")
+  position      Int
+  type          QuestionType
+  prompt        String
+  payload       Json
+  correctAnswer Json         @map("correct_answer")
+  explanation   String
+  submittedAnswer Json?      @map("submitted_answer")
+  isCorrect     Boolean?     @map("is_correct")
+  answeredAt    DateTime?    @map("answered_at")
+  attempt       BossAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  bossQuestion  BossQuestion @relation(fields: [bossQuestionId], references: [id], onDelete: Restrict)
+
+  @@unique([attemptId, position])
+  @@unique([attemptId, bossQuestionId])
+  @@map("boss_attempt_questions")
 }

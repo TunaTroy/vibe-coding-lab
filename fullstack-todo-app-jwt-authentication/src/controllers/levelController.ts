@@ -17,10 +17,15 @@ export class LevelController {
 
   getLevelQuestions = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: 'Unauthorized.' });
       const levelId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      const data = await this.levelService.getLevelQuestions(levelId);
+      const data = await this.levelService.getLevelQuestions(levelId, userId);
       return res.status(200).json(data);
     } catch (error) {
+      if (error instanceof Error && error.message.includes('not unlocked')) {
+        return res.status(403).json({ message: 'Level not unlocked.' });
+      }
       next(error);
     }
   };
@@ -52,6 +57,9 @@ export class LevelController {
       // Handle unlock permission error
       if (error instanceof Error && error.message.includes('not unlocked')) {
         return res.status(403).json({ message: error.message });
+      }
+      if (error instanceof Error && (error.message.includes('question IDs') || error.message.includes('Submission must'))) {
+        return res.status(400).json({ message: error.message });
       }
 
       next(error);

@@ -1,126 +1,81 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import BattleModeCard from "../components/home/BattleModeCard";
-import EventBanner from "../components/home/EventBanner";
+import { displayName } from "../components/layout/PageShell";
 import LeaderboardWidget from "../components/home/LeaderboardWidget";
+import LearningProgress from "../components/home/LearningProgress";
 import StudyModeCard from "../components/home/StudyModeCard";
-import SidebarNav from "../components/layout/SidebarNav";
-import TopBar from "../components/layout/TopBar";
-import Reveal from "../components/ui/Reveal";
-import { DAILY_TASKS_SEED } from "../data/levels";
+import UpcomingFeatures from "../components/home/UpcomingFeatures";
 import { useAuth } from "../hooks/useAuth";
-import { getErrorMessage } from "../services/api";
 import { fetchLeaderboard } from "../services/leaderboardService";
-import { fetchAllLevels } from "../services/levelService";
-
-/* ============================================================
-   HomePage — SAU REFACTOR theo UI Spec mới:
-   Layout: TopBar → Grid 2 cột (Study + Battle) → Leaderboard → EventBanner
-   SidebarNav dạng drawer off-canvas thay thế SideMenu cũ
-   ============================================================ */
+import { fetchAllLevels, fetchAllTenses } from "../services/levelService";
 
 export default function HomePage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [levels, setLevels] = useState([]);
+  const [tenses, setTenses] = useState([]);
   const [players, setPlayers] = useState([]);
-  const [error, setError] = useState("");
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [levelLoading, setLevelLoading] = useState(true);
+  const [tenseLoading, setTenseLoading] = useState(true);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [levelError, setLevelError] = useState(false);
+  const [tenseError, setTenseError] = useState(false);
+  const [leaderboardError, setLeaderboardError] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
-    let mounted = true;
+    let active = true;
+    setLevelLoading(true);
+    setTenseLoading(true);
+    setLeaderboardLoading(true);
+    setLevelError(false);
+    setTenseError(false);
+    setLeaderboardError("");
+
     fetchAllLevels()
-      .then((res) => {
-        if (mounted) setLevels(res.levels);
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setError(getErrorMessage(err));
-        if (err?.status === 401) {
-          void logout();
-          navigate("/login");
-        }
-      });
-    // Bảng xếp hạng: dữ liệu thật từ DB (coinBalance + tổng stars), backend
-    // tự tính rank + đánh dấu isCurrentUser. Lỗi ở đây không đăng xuất user,
-    // chỉ để widget rỗng (không phải thao tác bắt buộc như danh sách level).
+      .then((data) => { if (active) setLevels(data.levels); })
+      .catch(() => { if (active) setLevelError(true); })
+      .finally(() => { if (active) setLevelLoading(false); });
+
+    fetchAllTenses()
+      .then((data) => { if (active) setTenses(data.tenses); })
+      .catch(() => { if (active) setTenseError(true); })
+      .finally(() => { if (active) setTenseLoading(false); });
+
     fetchLeaderboard()
-      .then((res) => {
-        if (mounted) setPlayers(res.players);
-      })
-      .catch(() => {
-        /* widget tự ẩn nếu players rỗng, không cần báo lỗi riêng ở đây */
-      });
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      .then((data) => { if (active) setPlayers(data.players); })
+      .catch(() => { if (active) setLeaderboardError("Chưa tải được bảng xếp hạng. Hãy thử lại sau nhé."); })
+      .finally(() => { if (active) setLeaderboardLoading(false); });
+
+    return () => { active = false; };
+  }, [retryKey]);
 
   if (!user) return null;
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
-
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Background arena */}
-      <div className="arena-bg" aria-hidden />
-      <div className="arena-glow" aria-hidden />
-      <div className="arena-noise" aria-hidden />
+    <div className="home-lobby mx-auto max-w-[1260px] space-y-7 sm:space-y-9">
+      <div className="flex items-end justify-between gap-4 px-1">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-gold-deep">Chào mừng trở lại sân học viện</p>
+          <p className="mt-1 break-words font-display text-xl font-extrabold text-cream sm:text-2xl">Xin chào, {displayName(user)}!</p>
+        </div>
+        <span className="hidden text-sm text-cream/55 md:inline">Hôm nay mình học thêm một chút nhé.</span>
+      </div>
 
-      {/* Sidebar Drawer */}
-      <SidebarNav
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-        onLogout={handleLogout}
+      <StudyModeCard
+        onStart={() => navigate("/tenses")}
+        tenses={tenses}
+        loading={tenseLoading}
+        error={tenseError}
+        earnedStars={levelLoading || levelError ? null : levels.reduce((total, level) => total + (Number(level.starsEarned) || 0), 0)}
       />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 py-6">
-        {/* TopBar */}
-        <TopBar onMenuToggle={() => setIsMenuOpen(true)} />
+      <LearningProgress levels={levels} tenseCount={tenseLoading || tenseError ? null : tenses.length} loading={levelLoading} error={levelError} onRetry={() => setRetryKey((key) => key + 1)} />
 
-        {/* Main Content Container */}
-        <div className="bg-gradient-to-b from-[#241f1f]/80 to-[#141010]/80 border-x border-b border-gold/20 rounded-b-2xl p-6 space-y-6">
-          {error && (
-            <div
-              role="alert"
-              className="anim-rise rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-3 text-sm text-[#ff9d92]"
-            >
-              {error}
-            </div>
-          )}
+      <LeaderboardWidget players={players} loading={leaderboardLoading} error={leaderboardError} onRetry={() => setRetryKey((key) => key + 1)} />
 
-          {/* Hàng 1: Grid 2 cột - Study Mode & Battle Mode */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Cột trái: Chế độ Học */}
-            <Reveal delay={40}>
-              <StudyModeCard
-                levelsCount={levels.length}
-                onStart={() => navigate("/tenses")}
-              />
-            </Reveal>
-
-            {/* Cột phải: Chế độ Chiến */}
-            <Reveal delay={140}>
-              <BattleModeCard />
-            </Reveal>
-          </div>
-
-          {/* Hàng 2: Bảng Xếp Hạng */}
-          <Reveal delay={120}>
-            <LeaderboardWidget players={players} />
-          </Reveal>
-
-          {/* Hàng 3: Event Banner Footer */}
-          <Reveal delay={160}>
-            <EventBanner />
-          </Reveal>
-        </div>
-      </div>
+      <UpcomingFeatures />
     </div>
   );
 }

@@ -9,7 +9,7 @@ describe('errorHandler', () => {
     errorHandler(new Error('boom'), req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ message: 'boom' });
+    expect(res.json).toHaveBeenCalledWith({ message: 'Internal server error.' });
   });
 
   it('falls through when headers have already been sent', () => {

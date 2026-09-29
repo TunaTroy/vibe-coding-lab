@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import PageShell from "../components/layout/PageShell";
+import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import Reveal from "../components/ui/Reveal";
 import { useAuth } from "../hooks/useAuth";
@@ -10,7 +11,7 @@ import { fetchAllTenses } from "../services/levelService";
 
 /* ============================================================
    TenseSelectPage — tầng điều hướng "Chọn Thì" (Vấn đề 1 [14]).
-   GET /api/tenses → card cho mỗi Thì CÓ trong DB (mở khoá, bấm
+   GET /api/tenses → card cho mỗi Thì có nội dung (bấm
    vào → /tenses/:tenseId/levels). Các Thì còn lại trong lộ trình
    "12 Thì" CHƯA có data thật → hiển thị ô "Sắp ra mắt" (khoá),
    KHÔNG bịa seed data.
@@ -23,16 +24,21 @@ export default function TenseSelectPage() {
   const navigate = useNavigate();
   const [tenses, setTenses] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
+    setError("");
     fetchAllTenses()
       .then((res) => mounted && setTenses(res.tenses))
-      .catch((err) => mounted && setError(getErrorMessage(err)));
+      .catch((err) => mounted && setError(getErrorMessage(err)))
+      .finally(() => mounted && setLoading(false));
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [retryKey]);
 
   if (!user) return null;
 
@@ -63,67 +69,63 @@ export default function TenseSelectPage() {
       </Reveal>
 
       {error && (
-        <div role="alert" className="anim-rise mb-5 rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-3 text-sm text-[#ff9d92]">
-          {error}
+        <div role="alert" className="anim-rise mb-5 rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-4 text-center text-sm text-[#ff9d92]">
+          <p>{error}</p>
+          <Button variant="secondary" size="sm" className="mt-3" onClick={() => setRetryKey((key) => key + 1)}>
+            Thử lại
+          </Button>
         </div>
       )}
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Thì đã có trong DB — isUnlocked do backend tính theo tiến độ [15] */}
-        {tenses.map((tense, i) =>
-          tense.isUnlocked ? (
-            <Reveal key={tense.id} delay={i * 80}>
-              <Card
-                shine
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate(`/tenses/${tense.id}/levels`)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    navigate(`/tenses/${tense.id}/levels`);
-                  }
-                }}
-                className="relative p-6 border-2 border-gold-deep/50 cursor-pointer transition-all duration-300 hover:border-gold-bright hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-bright"
-              >
-                <div className="flex items-start justify-between">
-                  <span className="text-4xl" aria-hidden>⚽</span>
-                  <span className="font-mono text-[11px] uppercase tracking-wider text-cream/45 border border-gold/20 rounded px-2 py-0.5">
-                    Thì {tense.order}
-                  </span>
-                </div>
-                <h3 className="font-display mt-4 text-xl font-bold uppercase tracking-wide text-cream">
-                  {tense.name}
-                </h3>
-                <p className="mt-1 text-[13px] text-cream/60 leading-relaxed">
-                  Đã mở khoá · Sẵn sàng thi đấu
-                </p>
-                <div className="mt-5 pt-4 border-t border-gold/15 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gold-bright">Vào học ngay</span>
-                  <span className="text-gold-bright text-lg transition-transform duration-200 group-hover:translate-x-1">→</span>
-                </div>
-              </Card>
-            </Reveal>
-          ) : (
-            /* Thì CÓ trong DB nhưng chưa mở khoá (chưa hạ Trùm của Thì trước) */
-            <Reveal key={tense.id} delay={i * 80}>
-              <Card className="relative p-6 border-2 border-gold/10 opacity-60 cursor-not-allowed">
-                <div className="flex items-start justify-between">
-                  <span className="text-4xl grayscale" aria-hidden>🔒</span>
-                  <span className="font-mono text-[11px] uppercase tracking-wider text-cream/35 border border-gold/10 rounded px-2 py-0.5">
-                    Thì {tense.order}
-                  </span>
-                </div>
-                <h3 className="font-display mt-4 text-xl font-bold uppercase tracking-wide text-cream/50">
-                  {tense.name}
-                </h3>
-                <p className="mt-1 text-[13px] text-cream/40 leading-relaxed">
-                  Hạ Trùm của Thì trước để mở khoá
-                </p>
-              </Card>
-            </Reveal>
-          )
-        )}
+      {loading && (
+        <p className="py-16 text-center font-mono text-sm text-cream/50">Đang tải chương học...</p>
+      )}
+
+      {!loading && !error && tenses.length === 0 && (
+        <Card className="p-8 text-center">
+          <p className="text-4xl" aria-hidden>📚</p>
+          <p className="mt-3 text-sm text-cream/65">Chưa có chương học nào. Hãy quay lại sau nhé!</p>
+        </Card>
+      )}
+
+      {!loading && !error && tenses.length > 0 && <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Trạng thái mở khóa của mỗi Thì do API quyết định. */}
+        {tenses.map((tense, i) => (
+          <Reveal key={tense.id} delay={i * 80}>
+            <Card
+              shine={tense.isUnlocked}
+              role={tense.isUnlocked ? "button" : undefined}
+              tabIndex={tense.isUnlocked ? 0 : undefined}
+              onClick={tense.isUnlocked ? () => navigate(`/tenses/${tense.id}/levels`) : undefined}
+              onKeyDown={(e) => {
+                if (tense.isUnlocked && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  navigate(`/tenses/${tense.id}/levels`);
+                }
+              }}
+              className={`relative p-6 border-2 transition-all duration-300 ${tense.isUnlocked
+                ? "border-gold-deep/50 cursor-pointer hover:border-gold-bright hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-bright"
+                : "border-gold/10 opacity-60 cursor-not-allowed"}`}
+            >
+              <div className="flex items-start justify-between">
+                <span className={`text-4xl ${tense.isUnlocked ? "" : "grayscale"}`} aria-hidden>{tense.isUnlocked ? "⚽" : "🔒"}</span>
+                <span className="font-mono text-[11px] uppercase tracking-wider text-cream/45 border border-gold/20 rounded px-2 py-0.5">
+                  Thì {tense.order}
+                </span>
+              </div>
+              <h3 className={`font-display mt-4 text-xl font-bold uppercase tracking-wide ${tense.isUnlocked ? "text-cream" : "text-cream/50"}`}>
+                {tense.name}
+              </h3>
+              <p className="mt-1 text-[13px] text-cream/60 leading-relaxed">
+                {tense.isUnlocked ? "Đã có bài học · Sẵn sàng luyện tập" : "Vượt qua Boss của Thì trước để mở khóa"}
+              </p>
+              {tense.isUnlocked && <div className="mt-5 pt-4 border-t border-gold/15 flex items-center justify-between">
+                <span className="text-xs font-semibold text-gold-bright">Vào học ngay</span>
+                <span className="text-gold-bright text-lg transition-transform duration-200 group-hover:translate-x-1">→</span>
+              </div>}
+            </Card>
+          </Reveal>
+        ))}
 
         {/* Thì chưa có data — khoá "Sắp ra mắt" (không bịa data) */}
         {Array.from({ length: lockedCount }).map((_, i) => (
@@ -147,7 +149,7 @@ export default function TenseSelectPage() {
             </Card>
           </Reveal>
         ))}
-      </div>
+      </div>}
     </PageShell>
   );
 }

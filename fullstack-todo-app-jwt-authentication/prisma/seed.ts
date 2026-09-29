@@ -1,21 +1,21 @@
 import { PrismaClient, Role, QuestionType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { seedBoss } from './bossSeed';
 
 const prisma = new PrismaClient();
 
 /* ============================================================
-   Seed Present Simple — 5 Level × 10 câu + Level 6 Boss (cập nhật [15]).
+   Seed Present Simple — 5 Level nền tảng, Level 6 ôn tập và BossCheckpoint riêng.
    - Mỗi Level có `name` (tên dạng bài) — Vấn đề 2.
-   - Level 6 "Đại Chiến Trùm Cuối": isBoss=true, passScore=80, coinReward=150,
-     18 câu TRỘN đủ 5 loại dễ→khó — bài kiểm tra mở khoá Thì kế tiếp.
+   - Level 6 là bài ôn tập thường, chỉ mở sau khi vượt qua BossCheckpoint 1.
+     Giữ 18 câu hỗn hợp từ nội dung cũ để không mất bài học đã có.
    - MỌI câu hỏi có payload.hint = câu quy tắc ngữ pháp — Vấn đề 4.
      (Riêng FILL_BLANK: `hint` đổi ý nghĩa thành câu lý thuyết,
      KHÔNG còn là nguyên mẫu động từ gợi ý đáp án.)
    - CLOZE dùng contract MỚI { segments, bank } — Vấn đề 3b.
      answer/correctAnswer = number[] (index trong bank theo thứ tự blank).
    - correctAnswer CHỈ là string / number / mảng phẳng — KHÔNG object.
-   - Idempotent: Level đã có thì cập nhật `name`; Question xoá đi tạo lại
-     để áp dụng contract + hint + đủ 10 câu.
+   - Idempotent: cập nhật Level và Question tại chỗ, giữ ID hiện có.
    ============================================================ */
 
 /* ---------------- Level 1 — Trắc Nghiệm (MULTIPLE_CHOICE) ---------------- */
@@ -91,13 +91,12 @@ const L5 = [
   { prompt: 'Đọc đoạn văn và chọn đáp án đúng.', passage: 'The children sing and dance at school.', statement: 'The children sing at school.', correctAnswer: 'TRUE', hint: 'Hát (sing) được nhắc đến trong đoạn văn.' },
 ];
 
-/* ---------------- Level 6 — Đại Chiến Trùm Cuối (BOSS) ----------------
-   Trộn đủ 5 loại câu hỏi, sắp xếp DỄ → KHÓ theo order. [15]
+/* ---------------- Level 6 — Ôn tập tổng hợp (NORMAL LEVEL) ----------------
+   Trộn đủ 5 loại câu hỏi, sắp xếp DỄ → KHÓ theo order.
    - Mỗi row tự mang `type`; builder đọc row.type để dựng payload.
    - correctAnswer CHỈ string / number / mảng phẳng — KHÔNG object.
-   - passScore 80 (khó hơn 5 Level thường), coinReward 150.
 -------------------------------------------------------------------- */
-const L6_BOSS = [
+const L6_REVIEW = [
   // --- Dễ (khởi động) ---
   { type: QuestionType.MULTIPLE_CHOICE, prompt: 'She ___ to school every day.', options: ['go', 'goes', 'going', 'went'], correctAnswer: 1, hint: 'Chủ ngữ số ít (she) → động từ thêm -s/-es.' },
   { type: QuestionType.TRUE_FALSE_NOT_GIVEN, prompt: 'Đọc đoạn văn và chọn đáp án đúng.', passage: 'Tom likes apples.', statement: 'Tom likes apples.', correctAnswer: 'TRUE', hint: 'Câu nhận định giống hệt đoạn văn.' },
@@ -122,8 +121,8 @@ const L6_BOSS = [
   { type: QuestionType.MULTIPLE_CHOICE, prompt: '___ you speak English?', options: ['Do', 'Does', 'Is', 'Are'], correctAnswer: 0, hint: 'Câu hỏi với you/we/they bắt đầu bằng "Do".' },
 ];
 
-/* ---------------- Build payload cho Boss (trộn 5 loại) ---------------- */
-function buildBossQuestions(rows: any[]) {
+/* ---------------- Build payload cho Level hỗn hợp (trộn 5 loại) ---------------- */
+function buildMixedQuestions(rows: any[]) {
   return rows.map((row, i) => {
     const type = row.type as QuestionType;
     let payload: any;
@@ -191,8 +190,7 @@ const LEVELS = [
   { order: 3, name: 'Nối Câu', type: QuestionType.MATCHING, questions: buildQuestions(QuestionType.MATCHING, L3) },
   { order: 4, name: 'Điền Đoạn Văn', type: QuestionType.CLOZE, questions: buildQuestions(QuestionType.CLOZE, L4) },
   { order: 5, name: 'Đúng / Sai / Không Đề Cập', type: QuestionType.TRUE_FALSE_NOT_GIVEN, questions: buildQuestions(QuestionType.TRUE_FALSE_NOT_GIVEN, L5) },
-  // Level 6 — Boss Battle: bài kiểm tra tổng hợp mở khoá Thì kế tiếp [15].
-  { order: 6, name: 'Đại Chiến Trùm Cuối', type: null, isBoss: true, passScore: 80, coinReward: 150, questions: buildBossQuestions(L6_BOSS) },
+  { order: 6, name: 'Ôn Tập Tổng Hợp', type: null, isBoss: false, passScore: 70, coinReward: 50, questions: buildMixedQuestions(L6_REVIEW) },
 ];
 
 async function main() {
@@ -232,13 +230,13 @@ async function main() {
       where: { tenseId: tense.id, order: def.order },
     });
 
-    // [15]: passScore/coinReward/isBoss đọc từ def (mặc định của 5 Level thường).
+    // Level 6 cũ có thể đã được seed dưới dạng Boss; cập nhật tại chỗ, giữ ID và tiến độ.
     const passScore = def.passScore ?? 70;
     const coinReward = def.coinReward ?? 50;
     const isBoss = def.isBoss ?? false;
 
     if (level) {
-      // Đã có → cập nhật tên + cờ boss (idempotent, hội tụ về đúng cấu hình)
+      // Đã có → cập nhật cấu hình tại chỗ (idempotent, giữ ID và tiến độ).
       level = await prisma.level.update({
         where: { id: level.id },
         data: { name: def.name, passScore, coinReward, isBoss },
@@ -257,22 +255,24 @@ async function main() {
       console.log(`Level ${def.order} created:`, def.name);
     }
 
-    // Xoá câu cũ, tạo lại 10 câu (áp dụng hint + contract mới + đủ số lượng)
-    await prisma.question.deleteMany({ where: { levelId: level.id } });
+    // Preserve question IDs so a learner's open normal level is not invalidated by reseeding.
+    const existingQuestions = await prisma.question.findMany({ where: { levelId: level.id } });
+    const positions = new Set(existingQuestions.map(question => question.order));
+    if (positions.size !== existingQuestions.length || existingQuestions.some(question => question.order < 1 || question.order > def.questions.length)) {
+      throw new Error(`Level ${def.order} has unexpected question positions; refusing to reseed destructively.`);
+    }
     for (const q of def.questions) {
-      await prisma.question.create({
-        data: {
-          levelId: level.id,
-          type: q.type,
-          prompt: q.prompt,
-          payload: q.payload,
-          correctAnswer: q.correctAnswer,
-          order: q.order,
-        },
-      });
+      const existing = existingQuestions.find(question => question.order === q.order);
+      const data = { type: q.type, prompt: q.prompt, payload: q.payload, correctAnswer: q.correctAnswer };
+      if (existing) {
+        await prisma.question.update({ where: { id: existing.id }, data });
+      } else {
+        await prisma.question.create({ data: { levelId: level.id, order: q.order, ...data } });
+      }
     }
     console.log(`Level ${def.order} "${def.name}": seeded ${def.questions.length} questions`);
   }
+  await seedBoss(prisma, tense.id);
 }
 
 main()

@@ -1,423 +1,265 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import PageShell from "../components/layout/PageShell";
-import QuestionRenderer from "../components/quiz/QuestionRenderer";
-import Button from "../components/ui/Button";
-import Card from "../components/ui/Card";
-import { useAuth } from "../hooks/useAuth";
+import BossArena from "../components/boss/BossArena";
+import BossCharacter from "../components/boss/BossCharacter";
+import BossIntro from "../components/boss/BossIntro";
+import BossResult from "../components/boss/BossResult";
+import { canConfirmAnswer } from "../components/boss/BattleQuestion";
 import { getErrorMessage } from "../services/api";
-import { fetchLevelQuestions, submitLevel } from "../services/levelService";
+import { fetchBoss, fetchBossAttempt, startBossAttempt, submitBossAnswer } from "../services/bossService";
+import "../components/boss/boss.css";
 
-/* ============================================================
-   BossBattlePage — Level "trùm cuối" (isBoss=true) [15].
-   Bài kiểm tra tổng hợp, UI đối kháng Người chơi vs Boss.
-
-   LUỒNG:
-   1. GET /api/levels/:id/questions → { level, questions }.
-      Nếu level KHÔNG phải boss → redirect về /play/:id (UI thường).
-   2. Trả lời TUẦN TỰ từng câu (tái dụng QuestionRenderer nguyên trạng).
-      Mỗi lần chọn: người chơi tung đòn (hiệu ứng), KHÔNG tiết lộ đúng/sai.
-   3. Hết câu → POST /submit (giữ nguyên payload) → nhận correctAnswers THẬT.
-   4. "resolution": diễn lại trận đấu — đúng → Boss trừ máu, sai → Người chơi
-      trừ máu (tính từ correctAnswers của server, chống gian lận).
-   5. "done": báo cáo chi tiết từng câu + hint, nút Chơi lại / Về Chọn Thì.
-
-   QUAN TRỌNG: correctAnswer bị backend strip khỏi GET questions (bất biến
-   chống gian lận). Do đó đúng/sai CHỈ biết sau khi nộp bài — hiệu ứng máu
-   được diễn ở bước 4 dựa trên dữ liệu server trả về, KHÔNG lộ đáp án trước.
-   ============================================================ */
-
-const PLAYER_EMOJI = "🦸";
-const BOSS_EMOJI = "🐉";
-const BOSS_NAME = "Trùm Ngữ Pháp";
-
-function HpBar({ label, hp, emoji, tone, hit, alignRight }) {
-  const fill =
-    tone === "player"
-      ? "bg-gradient-to-r from-gold-deep to-gold-bright"
-      : "bg-gradient-to-r from-crimson to-ember";
-  return (
-    <div className={`flex-1 ${alignRight ? "text-right" : ""}`}>
-      <div className={`flex items-center gap-2 mb-1.5 ${alignRight ? "flex-row-reverse" : ""}`}>
-        <span className={`text-2xl ${hit ? "anim-hit inline-block" : ""}`} aria-hidden>{emoji}</span>
-        <span className="font-display font-bold text-sm uppercase tracking-wider text-cream">{label}</span>
-        <span className="font-mono text-xs text-cream/60">{Math.max(0, Math.round(hp))}/100</span>
-      </div>
-      <div className="h-4 rounded-full bg-pitch/70 border border-gold/20 overflow-hidden">
-        <div
-          className={`h-full rounded-full ${fill} transition-all duration-500 ease-out ${alignRight ? "ml-auto" : ""}`}
-          style={{ width: `${Math.max(0, hp)}%` }}
-        />
-      </div>
-    </div>
-  );
-}
+const storageKey = (bossId) => `boss-attempt:${bossId}`;
+const readStoredAttempt = (bossId) => { try { return sessionStorage.getItem(storageKey(bossId)); } catch { return null; } };
+const storeAttempt = (bossId, attemptId) => { try { sessionStorage.setItem(storageKey(bossId), attemptId); } catch { /* Resume still works through start endpoint. */ } };
+const forgetAttempt = (bossId) => { try { sessionStorage.removeItem(storageKey(bossId)); } catch { /* Storage may be disabled. */ } };
 
 export default function BossBattlePage() {
-  const { levelId = "" } = useParams();
-  const { user, logout, refreshUser } = useAuth();
+  const { bossId = "" } = useParams();
   const navigate = useNavigate();
-
-  const [data, setData] = useState(null);
-  const [loadError, setLoadError] = useState("");
-  const [submitError, setSubmitError] = useState("");
-
-  // answering → attacking → submitting → resolution → done
-  const [phase, setPhase] = useState("answering");
-  const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
+  const [boss, setBoss] = useState(null);
+  const [attempt, setAttempt] = useState(null);
+  const [phase, setPhase] = useState("loading");
+  const [draft, setDraft] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const [feedbackReady, setFeedbackReady] = useState(false);
+  const [hp, setHp] = useState(100);
+  const [pose, setPose] = useState("intro");
+  const [effect, setEffect] = useState(null);
+  const [combo, setCombo] = useState(0);
   const [result, setResult] = useState(null);
+  const [misses, setMisses] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const timers = useRef([]);
 
-  const [playerHp, setPlayerHp] = useState(100);
-  const [bossHp, setBossHp] = useState(100);
-  const [shot, setShot] = useState(null); // "player" | "boss" | null
-  const [playerHit, setPlayerHit] = useState(false);
-  const [bossHit, setBossHit] = useState(false);
-  const [resIndex, setResIndex] = useState(0);
+  const clearTimers = useCallback(() => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  }, []);
+  const schedule = useCallback((fn, delay) => {
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const id = setTimeout(fn, reduced ? 0 : delay);
+    timers.current.push(id);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
-    setData(null);
-    setLoadError("");
-    fetchLevelQuestions(levelId)
-      .then((res) => {
+    setPhase("loading");
+    setError("");
+    setBoss(null);
+    setAttempt(null);
+    setMisses([]);
+    clearTimers();
+
+    async function load() {
+      try {
+        const metadata = await fetchBoss(bossId);
         if (!mounted) return;
-        // Không phải boss → trả về UI chơi thường
-        if (!res?.level?.isBoss) {
-          navigate(`/play/${levelId}`, { replace: true });
+        setBoss(metadata);
+        if (!metadata.unlocked) {
+          setPhase("locked");
           return;
         }
-        setData(res);
-      })
-      .catch((err) => mounted && setLoadError(getErrorMessage(err)));
-    return () => {
-      mounted = false;
-    };
-  }, [levelId, navigate]);
-
-  const resetQuiz = useCallback(() => {
-    setPhase("answering");
-    setIndex(0);
-    setAnswers({});
-    setResult(null);
-    setPlayerHp(100);
-    setBossHp(100);
-    setShot(null);
-    setPlayerHit(false);
-    setBossHit(false);
-    setResIndex(0);
-    setSubmitError("");
-  }, []);
-
-  // ---- Diễn lại trận đấu dựa trên correctAnswers thật (sau khi nộp) ----
-  const total = data ? data.questions.length : 0;
-  const chunk = total > 0 ? 100 / total : 0;
-
-  useEffect(() => {
-    if (phase !== "resolution" || !result) return undefined;
-
-    if (resIndex >= total) {
-      const t = setTimeout(() => setPhase("done"), 650);
-      return () => clearTimeout(t);
-    }
-
-    const q = data.questions[resIndex];
-    const isCorrect =
-      JSON.stringify(answers[q.id]) === JSON.stringify(result.correctAnswers[q.id]);
-
-    setShot(isCorrect ? "player" : "boss");
-
-    const t = setTimeout(() => {
-      if (isCorrect) {
-        setBossHp((hp) => Math.max(0, hp - chunk));
-        setBossHit(true);
-        setTimeout(() => setBossHit(false), 420);
-      } else {
-        setPlayerHp((hp) => Math.max(0, hp - chunk));
-        setPlayerHit(true);
-        setTimeout(() => setPlayerHit(false), 420);
+        const savedId = readStoredAttempt(bossId);
+        if (savedId) {
+          try {
+            const saved = await fetchBossAttempt(savedId);
+            if (!mounted) return;
+            if (saved.bossId === bossId) {
+              setAttempt(saved);
+              setHp(saved.bossHp);
+              setPose(saved.status === "COMPLETED" ? saved.result?.passed ? "defeated" : "low_hp" : saved.bossHp <= 30 ? "low_hp" : "idle");
+              setResult(saved.result);
+              setPhase(saved.status === "COMPLETED" ? saved.result?.passed ? "victory" : "retry" : "active");
+              return;
+            }
+          } catch (resumeError) {
+            if (!mounted) return;
+            if (resumeError?.status === 0) throw resumeError;
+            forgetAttempt(bossId);
+          }
+        }
+        setPhase("intro");
+      } catch (loadError) {
+        if (mounted) {
+          setError(getErrorMessage(loadError));
+          setPhase("error");
+        }
       }
-      setShot(null);
-      setResIndex((i) => i + 1);
-    }, 300);
+    }
+    void load();
+    return () => { mounted = false; clearTimers(); };
+  }, [bossId, clearTimers]);
 
-    return () => clearTimeout(t);
-  }, [phase, resIndex, result, answers, data, total, chunk]);
+  const journeyPath = boss?.tenseId ? `/tenses/${boss.tenseId}/levels` : "/tenses";
+  const leave = () => navigate(journeyPath);
 
-  if (!user) return null;
-
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
-
-  if (loadError) {
-    return (
-      <PageShell user={user} onLogout={handleLogout} active="levels">
-        <Card className="p-10 text-center max-w-lg mx-auto">
-          <p className="text-3xl" aria-hidden>🟥</p>
-          <p className="mt-3 text-sm text-cream/70">{loadError}</p>
-          <Button variant="secondary" className="mt-5" onClick={() => navigate("/tenses")}>
-            ← Về chọn Thì
-          </Button>
-        </Card>
-      </PageShell>
-    );
-  }
-
-  if (!data) {
-    return (
-      <PageShell user={user} onLogout={handleLogout} active="levels">
-        <div className="flex items-center justify-center py-24">
-          <p className="font-mono text-sm text-cream/50">
-            Đang triệu hồi Trùm<span className="cursor-blink">...</span>
-          </p>
-        </div>
-      </PageShell>
-    );
-  }
-
-  const level = data.level;
-  const questions = data.questions;
-  const question = questions[index];
-  const selected = answers[question.id] ?? null;
-
-  const doSubmit = async (finalAnswers) => {
+  const begin = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
     try {
-      const res = await submitLevel(
-        level.id,
-        questions.map((q) => ({ questionId: q.id, answer: finalAnswers[q.id] ?? -1 }))
-      );
-      setResult(res);
-      if (res.coinAwarded > 0) {
-        refreshUser({ ...user, coinBalance: user.coinBalance + res.coinAwarded });
-      }
-      // Diễn lại trận đấu từ đầu với dữ liệu thật
-      setPlayerHp(100);
-      setBossHp(100);
-      setResIndex(0);
-      setPhase("resolution");
-    } catch (err) {
-      setSubmitError(getErrorMessage(err));
-      setPhase("answering");
+      const next = await startBossAttempt(bossId);
+      storeAttempt(bossId, next.id);
+      setAttempt(next);
+      setResult(null);
+      setMisses([]);
+      setDraft(null);
+      setFeedback(null);
+      setFeedbackReady(false);
+      setHp(next.bossHp);
+      setPose(next.bossHp <= 30 ? "low_hp" : "idle");
+      setEffect(null);
+      setCombo(0);
+      setPhase("active");
+    } catch (startError) {
+      setError(getErrorMessage(startError));
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleSelect = (answer) => {
-    if (phase !== "answering") return;
-    const newAnswers = { ...answers, [question.id]: answer };
-    setAnswers(newAnswers);
-    setPhase("attacking");
-    // Người chơi tung đòn (chưa tiết lộ đúng/sai)
-    setShot("player");
-    setBossHit(true);
-
-    setTimeout(() => {
-      setShot(null);
-      setBossHit(false);
-      if (index >= total - 1) {
-        setPhase("submitting");
-        void doSubmit(newAnswers);
-      } else {
-        setIndex((i) => i + 1);
-        setPhase("answering");
+  const confirm = async () => {
+    const question = attempt?.currentQuestion;
+    if (busy || !question || !canConfirmAnswer(question, draft)) return;
+    setBusy(true);
+    setError("");
+    const submitted = draft;
+    try {
+      const graded = await submitBossAnswer(attempt.id, question.id, submitted);
+      if (!graded.isCorrect && graded.explanation) {
+        setMisses((current) => current.some((item) => item.position === graded.questionNumber)
+          ? current : [...current, { position: graded.questionNumber, explanation: graded.explanation }]);
       }
-    }, 800);
+      setFeedback(graded);
+      setFeedbackReady(false);
+      setHp(graded.bossHpBefore);
+      setPhase("feedback");
+      setCombo((previous) => graded.isCorrect ? previous + 1 : 0);
+      schedule(() => {
+        setEffect(graded.isCorrect ? "hit" : "attack");
+        setPose(graded.isCorrect ? "hit" : "attack");
+      }, 90);
+      schedule(() => {
+        if (graded.result?.passed) {
+          setHp(graded.isCorrect ? Math.max(10, graded.bossHpBefore - 10) : graded.bossHpBefore);
+        } else {
+          setHp(graded.bossHpAfter);
+        }
+      }, 430);
+      schedule(() => {
+        setEffect(null);
+        setPose(graded.bossHpAfter <= 30 ? "low_hp" : "idle");
+        if (!graded.result) setFeedbackReady(true);
+      }, 1050);
+
+      if (graded.result) {
+        setResult(graded.result);
+        if (graded.result.passed) {
+          schedule(() => {
+            setPhase("finalBlow");
+            setEffect("final");
+            setPose("low_hp");
+          }, 1120);
+          schedule(() => { setHp(graded.result.bossHp); setPose("defeated"); }, 1620);
+          schedule(() => { setEffect(null); setPhase("victory"); }, 2250);
+        } else {
+          schedule(() => setPhase("retry"), 1480);
+        }
+      }
+    } catch (submitError) {
+      let resynced = false;
+      if (submitError?.status === 409) {
+        try {
+          const latest = await fetchBossAttempt(attempt.id);
+          if (latest.status === "COMPLETED") {
+            setResult(latest.result);
+            setHp(latest.bossHp);
+            setPhase(latest.result?.passed ? "victory" : "retry");
+            resynced = true;
+          } else if (latest.currentQuestion?.id !== question.id) {
+            setAttempt(latest);
+            setDraft(null);
+            setHp(latest.bossHp);
+            setPhase("active");
+            resynced = true;
+          }
+        } catch { /* Keep the draft for retry if resync also fails. */ }
+      }
+      setError(resynced ? "" : getErrorMessage(submitError));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const correctCount = result
-    ? questions.filter(
-        (q) => JSON.stringify(answers[q.id]) === JSON.stringify(result.correctAnswers[q.id])
-      ).length
-    : 0;
-  const passed = result ? result.score >= level.passScore : false;
+  const continueQuestion = () => {
+    if (!feedback?.nextQuestion || !feedbackReady) return;
+    clearTimers();
+    setAttempt((current) => ({
+      ...current,
+      currentQuestion: feedback.nextQuestion,
+      currentPosition: feedback.nextQuestion.position,
+      correctCount: feedback.correctCount,
+      bossHp: feedback.bossHpAfter,
+    }));
+    setDraft(null);
+    setFeedback(null);
+    setFeedbackReady(false);
+    setError("");
+    setEffect(null);
+    setPose(feedback.bossHpAfter <= 30 ? "low_hp" : "idle");
+    setPhase("active");
+  };
 
-  /* ---------------- Màn báo cáo ---------------- */
-  if (phase === "done" && result) {
-    return (
-      <PageShell user={user} onLogout={handleLogout} active="levels">
-        <div className="max-w-3xl mx-auto">
-          <Card shine className={`p-8 border-2 ${passed ? "border-gold-bright/60" : "border-crimson/60"}`}>
-            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gold/70 text-center">
-              Trận đấu kết thúc
-            </p>
-            <h2
-              className={`font-display mt-2 text-3xl sm:text-4xl font-extrabold uppercase tracking-wide text-center ${
-                passed ? "text-gold-bright" : "text-[#e0394f]"
-              }`}
-            >
-              {passed ? "🏆 Chiến thắng!" : "💀 Chưa hạ được Trùm"}
-            </h2>
+  const replay = async () => {
+    clearTimers();
+    setBusy(true);
+    setError("");
+    try {
+      const next = await startBossAttempt(bossId);
+      storeAttempt(bossId, next.id);
+      setAttempt(next);
+      setResult(null);
+      setMisses([]);
+      setDraft(null);
+      setFeedback(null);
+      setFeedbackReady(false);
+      setHp(next.bossHp);
+      setPose("idle");
+      setEffect(null);
+      setCombo(0);
+      setPhase("active");
+    } catch (retryError) {
+      setError(getErrorMessage(retryError));
+    } finally {
+      setBusy(false);
+    }
+  };
 
-            {/* Kết quả máu sau trận */}
-            <div className="mt-6 flex items-center gap-4">
-              <HpBar label="Bạn" hp={playerHp} emoji={PLAYER_EMOJI} tone="player" hit={false} />
-              <HpBar label={BOSS_NAME} hp={bossHp} emoji={BOSS_EMOJI} tone="boss" hit={false} alignRight />
-            </div>
+  const journey = () => { if (result) forgetAttempt(bossId); leave(); };
+  const active = ["active", "feedback", "finalBlow"].includes(phase);
 
-            {/* Tổng quan */}
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-              <div className="rounded-xl border border-gold/20 bg-pitch/60 px-3 py-3">
-                <p className="font-mono text-xl font-bold text-cream">{correctCount}/{total}</p>
-                <p className="text-[11px] uppercase tracking-wider text-cream/50">Câu đúng</p>
-              </div>
-              <div className="rounded-xl border border-gold/20 bg-pitch/60 px-3 py-3">
-                <p className="font-mono text-xl font-bold text-gold-bright">{result.score}%</p>
-                <p className="text-[11px] uppercase tracking-wider text-cream/50">Cần ≥{level.passScore}%</p>
-              </div>
-              <div className="rounded-xl border border-gold/20 bg-pitch/60 px-3 py-3">
-                <p className="font-mono text-xl font-bold text-gold-bright">{"⭐".repeat(result.stars) || "—"}</p>
-                <p className="text-[11px] uppercase tracking-wider text-cream/50">Sao</p>
-              </div>
-              <div className="rounded-xl border border-gold/40 bg-pitch/60 px-3 py-3">
-                <p className="font-mono text-xl font-bold text-gold-bright">+{result.coinAwarded}</p>
-                <p className="text-[11px] uppercase tracking-wider text-cream/50">Đô la Đạt</p>
-              </div>
-            </div>
-
-            <p className={`mt-4 text-center text-sm ${passed ? "text-gold-bright" : "text-[#ff9d92]"}`}>
-              {passed
-                ? "Bạn đã mở khoá Thì tiếp theo! Về màn Chọn Thì để khám phá."
-                : `Cần ít nhất ${level.passScore}% để hạ Trùm. Xem gợi ý bên dưới rồi thử lại nhé!`}
-            </p>
-
-            {/* Chi tiết từng câu */}
-            <div className="mt-6 space-y-2.5 max-h-72 overflow-y-auto pr-1">
-              {questions.map((q, i) => {
-                const isCorrect =
-                  JSON.stringify(answers[q.id]) === JSON.stringify(result.correctAnswers[q.id]);
-                return (
-                  <div
-                    key={q.id}
-                    className={`rounded-xl border px-4 py-3 ${
-                      isCorrect ? "border-gold/25 bg-pitch/40" : "border-crimson/40 bg-crimson/10"
-                    }`}
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <span className={`font-mono font-bold ${isCorrect ? "text-gold-bright" : "text-[#ff9d92]"}`}>
-                        {isCorrect ? "✓" : "✗"}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm text-cream/90">
-                          <span className="font-mono text-[11px] text-cream/45 mr-1.5">Câu {i + 1}</span>
-                          {q.prompt}
-                        </p>
-                        {q.payload?.hint && (
-                          <p className="mt-1 text-xs text-gold-deep">💡 {q.payload.hint}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-7 flex flex-col sm:flex-row gap-2.5 justify-center">
-              {passed ? (
-                <Button size="lg" onClick={() => navigate("/tenses")}>Về Chọn Thì 🗺</Button>
-              ) : (
-                <>
-                  <Button size="lg" variant="danger" onClick={resetQuiz}>Chơi lại ⚔️</Button>
-                  <Button size="lg" variant="secondary" onClick={() => navigate("/tenses")}>Về Chọn Thì</Button>
-                </>
-              )}
-            </div>
-          </Card>
-        </div>
-      </PageShell>
-    );
-  }
-
-  /* ---------------- Màn trận đấu ---------------- */
   return (
-    <PageShell user={user} onLogout={handleLogout} active="levels">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-crimson">⚔️ Boss Battle</p>
-            <h2 className="font-display text-xl sm:text-2xl font-extrabold uppercase tracking-wide text-cream">
-              {level.name}
-            </h2>
-          </div>
-          <span className="font-mono text-xs text-cream/55">
-            Câu {Math.min(index + 1, total)}/{total} · Cần ≥{level.passScore}%
-          </span>
-        </div>
+    <div className={`battle-root battle-root--${phase}`}>
+      <header className="battle-header">
+        <button type="button" className="battle-header__back" onClick={leave} aria-label={active ? "Tạm dừng và trở lại hành trình" : "Trở lại hành trình"}>
+          <span aria-hidden>←</span><span>{active ? "TẠM DỪNG" : "HÀNH TRÌNH"}</span>
+        </button>
+        <div className="battle-header__title"><span className="battle-header__emblem" aria-hidden>◆</span><span>BOSS BATTLE</span><small>{boss ? `LEVEL ${boss.sourceStart}–${boss.sourceEnd}` : "HỌC VIỆN TIẾNG ANH"}</small></div>
+        <div className="battle-header__progress">{active && attempt?.currentQuestion ? <>CÂU <strong>{attempt.currentQuestion.position}</strong> / {attempt.totalQuestions}</> : <span>TRẬN KIỂM TRA</span>}</div>
+      </header>
 
-        {/* Thanh máu */}
-        <div className="flex items-center gap-4">
-          <HpBar label="Bạn" hp={playerHp} emoji={PLAYER_EMOJI} tone="player" hit={playerHit} />
-          <span className="font-display font-extrabold text-2xl text-crimson select-none">VS</span>
-          <HpBar label={BOSS_NAME} hp={bossHp} emoji={BOSS_EMOJI} tone="boss" hit={bossHit} alignRight />
-        </div>
+      {phase === "loading" && <main className="battle-state"><div className="battle-state__art"><BossCharacter pose="intro" /></div><p className="battle-state__eyebrow">ĐANG MỞ CỔNG SÂN ĐẤU</p><h1>Chuẩn bị trận Boss...</h1><p>Đang kiểm tra và nối lại lượt chơi của bạn.</p></main>}
 
-        {/* Đấu trường */}
-        <div className="relative mt-5 h-32 rounded-2xl border border-gold/20 bg-gradient-to-b from-pitch/60 to-crimson/10 overflow-hidden">
-          {/* Người chơi (trái) */}
-          <div
-            className={`absolute left-[6%] top-1/2 -translate-y-1/2 text-5xl sm:text-6xl ${
-              shot === "player" ? "anim-lunge" : ""
-            } ${playerHit ? "anim-hit" : ""}`}
-            aria-hidden
-          >
-            {PLAYER_EMOJI}
-          </div>
-          {/* Boss (phải) */}
-          <div
-            className={`absolute right-[6%] top-1/2 -translate-y-1/2 text-5xl sm:text-6xl ${
-              bossHit ? "anim-hit" : ""
-            }`}
-            aria-hidden
-          >
-            {BOSS_EMOJI}
-          </div>
-          {/* Đạn bay */}
-          {shot === "player" && (
-            <div className="anim-fly-to-boss absolute top-1/2 -translate-y-1/2 text-3xl" aria-hidden>⚡</div>
-          )}
-          {shot === "boss" && (
-            <div className="anim-fly-to-player absolute top-1/2 -translate-y-1/2 text-3xl" aria-hidden>🔥</div>
-          )}
-          {/* Trạng thái giữa sân */}
-          <div className="absolute inset-x-0 bottom-2 text-center">
-            {phase === "submitting" && (
-              <p className="font-mono text-xs text-gold-bright">
-                Đang tung đòn quyết định<span className="cursor-blink">...</span>
-              </p>
-            )}
-            {phase === "resolution" && (
-              <p className="font-mono text-xs text-cream/60">
-                Diễn lại trận đấu<span className="cursor-blink">...</span>
-              </p>
-            )}
-          </div>
-        </div>
+      {(phase === "error" || phase === "locked") && <main className="battle-state"><div className="battle-state__art"><BossCharacter pose="intro" /></div><p className="battle-state__eyebrow">NGƯỜI GÁC NGỮ PHÁP</p><h1>{phase === "locked" ? "Boss chưa mở khóa" : "Chưa vào sân được"}</h1><p role={phase === "error" ? "alert" : undefined}>{phase === "locked" ? `Hãy hoàn thành Level ${boss?.sourceStart}–${boss?.sourceEnd} trước nhé.` : error}</p><div className="battle-state__actions"><button className="battle-action" type="button" onClick={() => window.location.reload()}>THỬ LẠI <span aria-hidden>↻</span></button><button className="battle-text-action" type="button" onClick={leave}>Quay lại hành trình</button></div></main>}
 
-        {/* Câu hỏi */}
-        {phase !== "resolution" && (
-          <Card shine className="mt-5 p-6 sm:p-8 border-2 border-crimson/30">
-            <QuestionRenderer
-              question={question}
-              selected={selected}
-              locked={phase !== "answering"}
-              onSelect={handleSelect}
-            />
+      {phase === "intro" && boss && <BossIntro boss={boss} onStart={begin} onLeave={leave} busy={busy} error={error} />}
 
-            {submitError && (
-              <div role="alert" className="anim-shake mt-5 rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-2.5 text-sm text-[#ff9d92]">
-                {submitError}
-              </div>
-            )}
-            {submitError && (
-              <div className="mt-4 text-right">
-                <Button variant="danger" onClick={() => void doSubmit(answers)}>Nộp bài lại 🏁</Button>
-              </div>
-            )}
-          </Card>
-        )}
-      </div>
-    </PageShell>
+      {active && boss && attempt?.currentQuestion && <BossArena boss={boss} attempt={attempt} question={attempt.currentQuestion} selected={draft} onSelect={setDraft} onConfirm={confirm} feedback={feedback} feedbackReady={feedbackReady} onContinue={continueQuestion} submitting={busy || phase === "finalBlow"} error={error} hp={hp} pose={pose} effect={effect} combo={combo} />}
+
+      {(phase === "victory" || phase === "retry") && boss && result && <BossResult boss={boss} result={result} reviewNotes={misses} onJourney={journey} onReplay={replay} busy={busy} error={error} />}
+    </div>
   );
 }

@@ -5,6 +5,7 @@ import { TenseRepository } from '../repositories/tenseRepository';
 import { TenseService } from '../services/tenseService';
 import { LevelService } from '../services/levelService';
 import { LevelRepository } from '../repositories/levelRepository';
+import { getJourney } from '../controllers/bossController';
 
 const router = Router();
 
@@ -17,5 +18,6 @@ router.get('/', requireAuth, tenseController.getTenses);
 
 // Level của một Thì (kèm tiến độ) — đặt TRƯỚC route nào khớp tham số đơn
 router.get('/:tenseId/levels', requireAuth, tenseController.getLevelsByTense);
+router.get('/:tenseId/journey', requireAuth, getJourney);
 
 export default router;

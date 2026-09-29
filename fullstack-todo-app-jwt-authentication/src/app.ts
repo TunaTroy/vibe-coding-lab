@@ -9,6 +9,7 @@ import leaderboardRoutes from './routes/leaderboardRoutes';
 import levelRoutes from './routes/levelRoutes';
 import todoRoutes from './routes/todoRoutes';
 import tenseRoutes from './routes/tenseRoutes'; 
+import { bossRoutes } from './routes/bossRoutes';
 
 export const app = express();
 
@@ -32,5 +33,6 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/levels', levelRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/tenses', tenseRoutes);
+app.use('/api', bossRoutes);
 
 app.use(errorHandler);

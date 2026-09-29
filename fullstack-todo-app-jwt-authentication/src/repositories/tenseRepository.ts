@@ -7,11 +7,6 @@ export interface TenseRecord {
   order: number;
 }
 
-/** Thì kèm các Level boss (isBoss = true) — dùng để tính mở khoá Thì [15]. */
-export interface TenseWithBossLevels extends TenseRecord {
-  levels: { id: string; isBoss: boolean }[];
-}
-
 export class TenseRepository {
   async findAllTenses(): Promise<TenseRecord[]> {
     return prisma.tense.findMany({
@@ -19,31 +14,18 @@ export class TenseRepository {
     });
   }
 
-  /** Toàn bộ Thì kèm các Level boss của nó (isBoss = true). */
-  async findAllTensesWithBossLevels(): Promise<TenseWithBossLevels[]> {
-    return prisma.tense.findMany({
-      orderBy: { order: 'asc' },
-      include: {
-        levels: {
-          where: { isBoss: true },
-          select: { id: true, isBoss: true },
-        },
-      },
+  async findPublishedBosses(tenseIds: string[]) {
+    return prisma.bossCheckpoint.findMany({
+      where: { tenseId: { in: tenseIds }, published: true },
+      select: { id: true, tenseId: true, groupIndex: true },
+      orderBy: { groupIndex: 'desc' },
     });
   }
 
-  /**
-   * LevelProgress của user cho một Level cụ thể.
-   * Pattern tham khảo từ levelRepository.findAllLevelProgressByUserId —
-   * đọc đúng trường passedAt để kiểm tra "đã pass hay chưa".
-   */
-  async findLevelProgressByUserIdAndLevelId(
-    userId: string,
-    levelId: string
-  ): Promise<{ passedAt: Date | null } | null> {
-    return prisma.levelProgress.findUnique({
-      where: { userId_levelId: { userId, levelId } },
-      select: { passedAt: true },
+  async findPassedBossIds(userId: string, bossIds: string[]) {
+    return prisma.bossProgress.findMany({
+      where: { userId, bossId: { in: bossIds }, passedAt: { not: null } },
+      select: { bossId: true },
     });
   }
 }

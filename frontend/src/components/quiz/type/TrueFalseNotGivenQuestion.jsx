@@ -10,7 +10,7 @@ const OPTIONS = [
   { value: "NOT_GIVEN", label: "NOT GIVEN", sub: "Không đề cập" },
 ];
 
-export default function TrueFalseNotGivenQuestion({ question, selected, locked, onSelect }) {
+export default function TrueFalseNotGivenQuestion({ question, selected, locked, onSelect, feedback = null }) {
   const passage = question.payload?.passage ?? "";
   const statement = question.payload?.statement ?? "";
 
@@ -31,6 +31,7 @@ export default function TrueFalseNotGivenQuestion({ question, selected, locked, 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         {OPTIONS.map((opt) => {
           const isSelected = selected === opt.value;
+          const answerResult = feedback && opt.value === feedback.correctAnswer ? "correct" : feedback && isSelected && !feedback.isCorrect ? "incorrect" : null;
           const stateClass = isSelected
             ? "border-gold-bright bg-gold/20 text-gold-bright shadow-[0_0_18px_rgba(255,215,0,0.2)]"
             : "border-gold/25 bg-pitch/50 text-cream hover:border-gold/70 hover:bg-gold/10 hover:-translate-y-0.5";
@@ -40,11 +41,14 @@ export default function TrueFalseNotGivenQuestion({ question, selected, locked, 
               key={opt.value}
               type="button"
               disabled={locked}
+              data-selected={isSelected}
+              data-answer-result={answerResult || undefined}
               onClick={() => onSelect(opt.value)}
               className={`rounded-xl border-2 px-4 py-3.5 text-center font-bold transition-all duration-200 ${stateClass}`}
             >
               <span className="block font-mono text-sm tracking-wider">{opt.label}</span>
               <span className="block text-xs font-medium opacity-70">{opt.sub}</span>
+              {answerResult && <span className="answer-verdict" aria-label={answerResult === "correct" ? "Đáp án đúng" : "Đáp án chưa đúng"}>{answerResult === "correct" ? "✓" : "×"}</span>}
             </button>
           );
         })}

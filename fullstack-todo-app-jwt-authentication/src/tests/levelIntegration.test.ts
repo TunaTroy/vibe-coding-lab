@@ -75,7 +75,7 @@ describe('Level integration tests', () => {
     });
 
     // Test
-    const result = await levelService.getLevelQuestions(level.id);
+    const result = await levelService.getLevelQuestions(level.id, user.id);
 
     expect(result.level).toMatchObject({
       id: level.id,

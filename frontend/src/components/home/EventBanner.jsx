@@ -12,11 +12,6 @@ import Button from "../ui/Button";
 export default function EventBanner() {
   const navigate = useNavigate();
 
-  // Kiểm tra xem có phải cuối tuần không
-  const today = new Date();
-  const day = today.getDay();
-  const isWeekend = day === 0 || day === 6;
-
   return (
     <Card className="p-4 border-t-2 border-gold/30">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -24,9 +19,7 @@ export default function EventBanner() {
         <div className="flex items-center gap-2">
           <span className="text-lg" aria-hidden>⭐</span>
           <p className="text-sm font-semibold text-cream">
-            {isWeekend
-              ? "Sự kiện cuối tuần: Chế độ Chiến đang mở!"
-              : "Sự kiện cuối tuần: Chế độ Chiến sẽ mở vào Thứ 7 này!"}
+            Chế độ Chiến đang được chuẩn bị · Sắp ra mắt
           </p>
         </div>
 
@@ -65,7 +58,7 @@ export default function EventBanner() {
             onClick={() => navigate("/shop")}
             className="ml-2"
           >
-            🛒 Cửa hàng
+            🛒 Cửa hàng · Sắp ra mắt
           </Button>
         </div>
       </div>

@@ -9,7 +9,7 @@ import { useRef, useState } from "react";
    MC chưa chọn).
    ============================================================ */
 
-export default function FillBlankQuestion({ question, selected, locked, onSelect }) {
+export default function FillBlankQuestion({ question, selected, locked, onSelect, draftMode = false }) {
   const [text, setText] = useState(typeof selected === "string" ? selected : "");
   const inputRef = useRef(null);
 
@@ -56,10 +56,13 @@ export default function FillBlankQuestion({ question, selected, locked, onSelect
           type="text"
           value={text}
           disabled={locked}
-          onChange={(e) => setText(e.target.value)}
-          onBlur={commit}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (draftMode) onSelect(e.target.value.trim().toLowerCase());
+          }}
+          onBlur={draftMode ? undefined : commit}
           onKeyDown={(e) => {
-            if (e.key === "Enter") inputRef.current?.blur();
+            if (e.key === "Enter" && !draftMode) inputRef.current?.blur();
           }}
           placeholder="Gõ từ cần điền..."
           autoComplete="off"

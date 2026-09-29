@@ -148,8 +148,8 @@ export default function LoginPage() {
           </p>
         </Card>
 
-        <p className="mt-4 text-center font-mono text-[11px] text-cream/35">
-          Gọi API thật tại {`{VITE_API_URL}`} · phiên lưu trong cookie httpOnly
+        <p className="mt-4 text-center text-xs text-cream/40">
+          Học vui mỗi ngày · Tiến bộ từng trận
         </p>
       </Reveal>
     </div>

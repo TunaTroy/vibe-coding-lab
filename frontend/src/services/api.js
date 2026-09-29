@@ -24,7 +24,7 @@ export function getErrorMessage(error) {
   const err = /** @type {import('../types/index').ApiError | null | undefined} */ (error);
 
   if (err?.status === 0) {
-    return "Không thể kết nối tới máy chủ. Kiểm tra backend đã chạy chưa (mặc định http://localhost:4000).";
+    return "Chưa thể kết nối. Hãy kiểm tra mạng và thử lại nhé.";
   }
   if (err?.status === 400) {
     const firstField = err.errors ? Object.values(err.errors)[0] : undefined;
@@ -38,7 +38,7 @@ export function getErrorMessage(error) {
   }
   if (err?.status === 403) return err.message || "Bạn không có quyền thực hiện thao tác này.";
   if (err?.status === 404) return err.message || "Không tìm thấy tài nguyên yêu cầu.";
-  if (err?.status === 500) return err.message || "Lỗi máy chủ. Vui lòng thử lại sau.";
+  if (err?.status === 500) return "Máy chủ đang bận. Hãy thử lại sau nhé.";
 
   return err?.message || "Đã có lỗi xảy ra với yêu cầu của bạn.";
 }

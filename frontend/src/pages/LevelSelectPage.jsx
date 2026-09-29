@@ -7,15 +7,10 @@ import Card from "../components/ui/Card";
 import Reveal from "../components/ui/Reveal";
 import { useAuth } from "../hooks/useAuth";
 import { getErrorMessage } from "../services/api";
-import { fetchLevelsByTense } from "../services/levelService";
+import { fetchJourney } from "../services/bossService";
+import BossJourneyNode from "../components/boss/BossJourneyNode";
 
-/* ============================================================
-   LevelSelectPage — Vấn đề 1+2 [14]:
-   - Đọc :tenseId từ route, gọi GET /api/tenses/:tenseId/levels
-     (isUnlocked + starsEarned do backend tính).
-   - Card hiện `level.name` (tên dạng bài) thay vì tenseName —
-     không còn 5 card đều hiện "PRESENT SIMPLE".
-   ============================================================ */
+/* The server orders LEVEL and BOSS nodes and supplies every unlock state. */
 
 /** Icon trang trí theo thứ tự level (backend không lưu icon). */
 const LEVEL_ICONS = { 1: "⚽", 2: "🏃", 3: "🏆", 4: "🥇", 5: "🎯" };
@@ -41,25 +36,33 @@ export default function LevelSelectPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { tenseId = "" } = useParams();
-  const [levels, setLevels] = useState([]);
+  const [journey, setJourney] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (!tenseId) return undefined;
     let mounted = true;
-    fetchLevelsByTense(tenseId)
-      .then((res) => mounted && setLevels(res.levels))
-      .catch((err) => mounted && setError(getErrorMessage(err)));
+    setLoading(true);
+    setError("");
+    setJourney(null);
+    fetchJourney(tenseId)
+      .then((res) => mounted && setJourney(res))
+      .catch((err) => mounted && setError(getErrorMessage(err)))
+      .finally(() => mounted && setLoading(false));
     return () => {
       mounted = false;
     };
-  }, [tenseId]);
+  }, [tenseId, retryKey]);
 
   if (!user) return null;
 
+  const nodes = journey?.nodes ?? [];
+  const levels = nodes.filter((node) => node.type === "LEVEL");
   const totalStars = levels.reduce((sum, l) => sum + l.starsEarned, 0);
   const totalPossible = levels.length * 3;
-  const tenseName = levels[0]?.tenseName ?? "";
+  const tenseName = journey?.tense?.name ?? "";
 
   const handleLogout = async () => {
     await logout();
@@ -79,9 +82,11 @@ export default function LevelSelectPage() {
             </h2>
           </div>
           <div className="flex items-center gap-4">
-            <p className="font-mono text-sm text-cream/70">
-              ⭐ {totalStars}/{totalPossible} sao
-            </p>
+            {!loading && levels.length > 0 && (
+              <p className="font-mono text-sm text-cream/70">
+                ⭐ {totalStars}/{totalPossible} sao
+              </p>
+            )}
             <Link to="/tenses" className="font-mono text-xs text-cream/60 hover:text-gold-bright transition-colors">
               ← Chọn Thì
             </Link>
@@ -90,46 +95,53 @@ export default function LevelSelectPage() {
       </Reveal>
 
       {error && (
-        <div role="alert" className="anim-rise mb-5 rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-3 text-sm text-[#ff9d92]">
-          {error}
+        <div role="alert" className="anim-rise mb-5 rounded-xl border border-crimson/50 bg-crimson/15 px-4 py-4 text-center text-sm text-[#ff9d92]">
+          <p>{error}</p>
+          <Button variant="secondary" size="sm" className="mt-3" onClick={() => setRetryKey((key) => key + 1)}>
+            Thử lại
+          </Button>
         </div>
       )}
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {levels.map((level, i) => (
-          <Reveal key={level.id} delay={i * 90}>
+      {loading && (
+        <p className="py-16 text-center font-mono text-sm text-cream/50">Đang tải danh sách level...</p>
+      )}
+
+      {!loading && !error && nodes.length === 0 && (
+        <Card className="p-8 text-center">
+          <p className="text-4xl" aria-hidden>📭</p>
+          <p className="mt-3 text-sm text-cream/65">Chương này chưa có level nào.</p>
+          <Button variant="secondary" className="mt-5" onClick={() => navigate("/tenses")}>← Chọn thì khác</Button>
+        </Card>
+      )}
+
+      {!loading && !error && nodes.length > 0 && <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {nodes.map((level, i) => level.type === "BOSS" ? (
+          <BossJourneyNode key={level.id} boss={level} />
+        ) : (
+          <Reveal key={level.id} delay={Math.min(i * 90, 450)}>
             <Card
-              shine={level.isUnlocked}
-              className={`relative p-6 flex flex-col h-full border-2 transition-all duration-300 ${level.isUnlocked
-                  ? level.isBoss
-                    ? "border-crimson/60 bg-gradient-to-b from-crimson/15 to-transparent hover:border-[#e0394f] hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(200,16,46,0.4)]"
-                    : "border-gold-deep/50 hover:border-gold-bright hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
+              shine={level.unlocked}
+              className={`relative p-6 flex flex-col h-full border-2 transition-all duration-300 ${
+                level.unlocked
+                  ? "border-gold-deep/50 hover:border-gold-bright hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
                   : "border-gold/10 opacity-55 grayscale"
-                }`}
+              }`}
             >
               <div className="flex items-start justify-between">
-                <span className="text-4xl" aria-hidden>
-                  {level.isUnlocked ? (level.isBoss ? "🐉" : iconFor(level.order)) : "🔒"}
-                </span>
-                <span
-                  className={`font-mono text-[11px] uppercase tracking-wider rounded px-2 py-0.5 border ${level.isBoss
-                      ? "text-[#e0394f] border-crimson/50 bg-crimson/10"
-                      : "text-cream/45 border-gold/20"
-                    }`}
-                >
-                  {level.isBoss ? "BOSS" : `LV.${level.order}`}
+                <span className="text-4xl" aria-hidden>{level.unlocked ? iconFor(level.order) : "🔒"}</span>
+                <span className="font-mono text-[11px] uppercase tracking-wider text-cream/45 border border-gold/20 rounded px-2 py-0.5">
+                  LV.{level.order}
                 </span>
               </div>
 
               {/* Tên DẠNG BÀI riêng của từng level (Vấn đề 2) */}
-              <h3 className={`font-display mt-4 text-xl font-bold uppercase tracking-wide ${level.isUnlocked ? "text-cream" : "text-cream/60"}`}>
+              <h3 className={`font-display mt-4 text-xl font-bold uppercase tracking-wide ${level.unlocked ? "text-cream" : "text-cream/60"}`}>
                 {level.name}
               </h3>
               <p className="mt-1 text-[13px] text-cream/60 leading-relaxed">
-                {level.isUnlocked
-                  ? level.isBoss
-                    ? `Level ${level.order} · Bài kiểm tra tổng hợp, cần ≥80% để mở khoá Thì kế tiếp`
-                    : `Level ${level.order} · Đã mở khóa, sẵn sàng thi đấu`
+                {level.unlocked
+                  ? `Level ${level.order} · Đã mở khóa, sẵn sàng thi đấu`
                   : `Level ${level.order} · Hoàn thành level trước để mở khóa`}
               </p>
 
@@ -143,15 +155,12 @@ export default function LevelSelectPage() {
               </div>
 
               <div className="mt-5 pt-4 border-t border-gold/15">
-                {level.isUnlocked ? (
+                {level.unlocked ? (
                   <Button
-                    variant={level.isBoss ? "danger" : "primary"}
                     className="w-full"
-                    onClick={() =>
-                      navigate(level.isBoss ? `/battle/${level.id}` : `/play/${level.id}`)
-                    }
+                    onClick={() => navigate(`/play/${level.id}`, { state: { tenseId } })}
                   >
-                    {level.isBoss ? "Khiêu chiến ⚔️" : level.starsEarned > 0 ? "Chơi lại ⚽" : "Bắt đầu ⚽"}
+                    {level.starsEarned > 0 ? "Chơi lại ⚽" : "Bắt đầu ⚽"}
                   </Button>
                 ) : (
                   <p className="text-center text-xs text-cream/45 py-2.5">
@@ -162,7 +171,7 @@ export default function LevelSelectPage() {
             </Card>
           </Reveal>
         ))}
-      </div>
+      </div>}
     </PageShell>
   );
 }

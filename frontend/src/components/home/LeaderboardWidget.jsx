@@ -1,106 +1,41 @@
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-import Card from "../ui/Card";
+function CoinIcon() {
+  return <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5.5" /><path d="M12 8v8m-2-6h3a2 2 0 0 1 0 4h-3" /></svg>;
+}
 
-/* ============================================================
-   LeaderboardWidget — Widget bảng xếp hạng tuần theo UI Spec:
-   - Top 5 người chơi với avatar/initials
-   - Highlight dòng user hiện tại (đóng khung riêng)
-   - Link "Xem toàn bộ BXH" điều hướng sang /leaderboard
-   ============================================================ */
-
-export default function LeaderboardWidget({ players }) {
-  const navigate = useNavigate();
+export default function LeaderboardWidget({ players, loading = false, error = "", onRetry }) {
+  const leaders = players.slice(0, 3);
+  const current = players.find((player) => player.isCurrentUser);
+  const showCurrent = current && !leaders.some((player) => player.rank === current.rank);
 
   return (
-    <Card className="p-5 border-2 border-gold/30">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-2xl" aria-hidden>🏆</span>
-        <h3 className="font-display text-base font-bold text-cream uppercase tracking-wider">
-          Bảng Xếp Hạng Tuần
-        </h3>
+    <section className="league-panel rounded-3xl border border-gold/20 px-5 py-6 sm:px-7" aria-labelledby="league-title">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-gold-deep">Theo số dư Đô la Đạt</p>
+          <h2 id="league-title" className="mt-1 font-display text-2xl font-extrabold text-cream">Bảng xếp hạng tổng</h2>
+        </div>
+        <Link to="/leaderboard" className="inline-flex min-h-11 items-center text-sm font-bold text-gold-bright underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-bright">Xem bảng xếp hạng →</Link>
       </div>
 
-      {/* Danh sách xếp hạng */}
-      <div className="space-y-2">
-        {players.slice(0, 5).map((player, index) => {
-          const isCurrentUser = player.isCurrentUser;
-          const rank = player.rank || index + 1;
-
-          // Avatar initial
-          const initial = player.name.charAt(0).toUpperCase();
-
-          // Style cho top 3
-          const isTopThree = rank <= 3;
-
-          return (
-            <div
-              key={player.name || rank}
-              className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${
-                isCurrentUser
-                  ? "bg-gradient-to-r from-gold-deep/30 to-gold-bright/15 border-gold-deep shadow-[0_0_14px_rgba(218,165,32,0.22)]"
-                  : "bg-pitch/30 border-gold/15 hover:border-gold/40 hover:-translate-y-0.5"
-              }`}
-            >
-              {/* Rank badge */}
-              <div
-                className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center font-bold text-sm ${
-                  isTopThree
-                    ? "bg-gradient-to-br from-gold-deep to-gold-bright text-pitch"
-                    : "bg-cream/15 text-cream"
-                }`}
-              >
-                {rank}
-              </div>
-
-              {/* Avatar initial */}
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-base ${
-                  isTopThree
-                    ? "bg-gradient-to-br from-crimson to-ember text-cream"
-                    : "bg-cream/10 text-cream/70"
-                }`}
-              >
-                {initial}
-              </div>
-
-              {/* Name */}
-              <div className="flex-1 min-w-0">
-                <p className={`font-bold text-sm truncate ${isCurrentUser ? "text-gold-bright" : "text-cream"}`}>
-                  {player.name}
-                </p>
-              </div>
-
-              {/* Score (căn phải) */}
-              <div className="flex items-center gap-1.5 text-right">
-                <span className="text-lg" role="img" aria-label="coin">🪙</span>
-                <span className="font-mono text-sm font-bold text-gold-bright">
-                  {player.coins.toLocaleString("vi-VN")}
-                </span>
-              </div>
-
-              {/* YOU badge cho user hiện tại */}
-              {isCurrentUser && (
-                <span className="shrink-0 font-mono text-[10px] font-bold text-gold-deep border border-gold-deep/50 rounded px-1.5 py-0.5">
-                  YOU
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Footer link */}
-      <div className="mt-4 pt-4 border-t border-gold/15 text-center">
-        <button
-          type="button"
-          onClick={() => navigate("/leaderboard")}
-          className="text-xs text-cream/60 hover:text-gold-deep transition-colors font-semibold uppercase tracking-wider"
-        >
-          Xem toàn bộ BXH →
-        </button>
-      </div>
-    </Card>
+      {loading && <p className="py-8 text-sm text-cream/60">Đang tải bảng xếp hạng...</p>}
+      {!loading && error && <div role="alert" className="flex flex-wrap items-center gap-3 py-7 text-sm text-cream/65"><span>{error}</span><button type="button" onClick={onRetry} className="min-h-11 font-bold text-gold-bright underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-bright">Thử lại</button></div>}
+      {!loading && !error && players.length === 0 && <p className="py-8 text-sm text-cream/65">Chưa có thành tích để xếp hạng.</p>}
+      {!loading && !error && players.length > 0 && <div className="mt-5 space-y-2">
+        {leaders.map((player) => <div key={player.rank} className={`flex min-h-14 items-center gap-3 rounded-xl border px-3 py-2 sm:px-4 ${player.isCurrentUser ? "border-gold/60 bg-gold/10" : "border-gold/10 bg-black/15"}`}>
+          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-black ${player.rank === 1 ? "border-gold-bright bg-gold-bright text-night" : "border-gold/30 bg-gold/10 text-gold-bright"}`}>{player.rank}</span>
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-cream">{player.name}{player.isCurrentUser && <span className="ml-2 text-xs font-medium text-gold-bright">Bạn</span>}</span>
+          <span className="hidden whitespace-nowrap text-sm text-cream/60 sm:inline">{player.stars} ★</span>
+          <span className="flex max-w-[42%] items-center gap-1 truncate text-sm font-bold text-gold-bright" aria-label={`${player.coins} Đô la Đạt`}><CoinIcon /><span className="truncate">{player.coins.toLocaleString("vi-VN")}</span></span>
+        </div>)}
+        {showCurrent && <div className="flex min-h-12 items-center gap-3 border-t border-gold/20 px-3 pt-3 text-sm">
+          <span className="w-9 shrink-0 text-center font-bold text-gold-bright">#{current.rank}</span>
+          <span className="min-w-0 flex-1 truncate font-semibold text-cream">Bạn · {current.name}</span>
+          <span className="hidden text-cream/60 sm:inline">{current.stars} ★</span>
+          <span className="flex max-w-[42%] items-center gap-1 truncate font-bold text-gold-bright" aria-label={`${current.coins} Đô la Đạt`}><CoinIcon /><span className="truncate">{current.coins.toLocaleString("vi-VN")}</span></span>
+        </div>}
+      </div>}
+    </section>
   );
 }

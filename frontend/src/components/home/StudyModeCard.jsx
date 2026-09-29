@@ -1,110 +1,43 @@
 import Button from "../ui/Button";
-import Card from "../ui/Card";
 
-/* ============================================================
-   StudyModeCard — Cập nhật theo UI Spec mới:
-   - Header: "KHÔNG GIỚI HẠN THỜI GIAN" + "CHẾ ĐỘ HỌC" + Icon 📖
-   - Danh sách chương với progress bar ASCII
-   - Footer: Nút "TIẾP TỤC HỌC"
-   ============================================================ */
+export default function StudyModeCard({ onStart, tenses, loading, error, earnedStars }) {
+  const names = tenses.map((tense) => tense.name).filter(Boolean);
+  const curriculum = names.length === 1
+    ? `Thì đang có trong học viện: ${names[0]}`
+    : names.length > 1
+      ? `${names.length} thì đang có trong học viện`
+      : "Khám phá các thì tiếng Anh qua từng trận học";
 
-const UPCOMING_CHAPTERS = [
-  { order: 2, title: "Câu Bị Động" },
-  { order: 3, title: "Câu Ước" },
-];
-
-export default function StudyModeCard({ levelsCount, onStart }) {
   return (
-    <Card shine className="p-6 border-2 border-gold-deep/50 relative overflow-hidden">
-      {/* Glow effect góc phải */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-gold-deep/20 to-transparent pointer-events-none" aria-hidden />
+    <section className="home-hero relative isolate flex min-h-[440px] flex-col overflow-hidden rounded-[28px] border border-gold/25 px-6 pb-7 pt-7 shadow-[0_24px_70px_rgba(0,0,0,0.45)] sm:px-10 sm:pb-10 sm:pt-9 lg:min-h-[490px] lg:px-12" aria-labelledby="home-hero-title">
+      <div className="home-hero-light pointer-events-none absolute inset-0" aria-hidden />
+      <div className="home-hero-field pointer-events-none absolute inset-0" aria-hidden />
+      <div className="home-hero-circle pointer-events-none absolute -bottom-36 -right-24 h-[450px] w-[450px] rounded-full sm:-bottom-48 sm:right-0 sm:h-[580px] sm:w-[580px]" aria-hidden />
+      <div className="pointer-events-none absolute right-[12%] top-[-120px] h-[260px] w-[260px] rounded-full bg-gold/5 blur-3xl" aria-hidden />
 
-      {/* Header Card */}
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <p className="text-xs font-bold text-cream/70 uppercase tracking-wider mb-1">
-            Không Giới Hạn Thời Gian
-          </p>
-          <h2 className="font-display text-xl sm:text-2xl font-bold text-gold-bright uppercase tracking-wider">
-            Chế Độ Học
-          </h2>
-        </div>
-        <div className="text-3xl sm:text-4xl" aria-hidden>📖</div>
+      <div className="relative z-10 flex items-start justify-between gap-4">
+        <span className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-night/45 px-4 py-2 text-xs font-bold tracking-[0.1em] text-gold-bright sm:text-sm">
+          <span className="h-2 w-2 rounded-full bg-crimson shadow-[0_0_10px_rgba(200,16,46,0.8)]" aria-hidden />
+          SÂN HỌC TẬP
+        </span>
+        {earnedStars !== null && <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-gold/40 bg-night/55 px-3 py-2 text-xs font-bold text-gold-bright sm:text-sm"><span aria-hidden>★</span>{earnedStars} sao</span>}
       </div>
 
-      {/* Danh sách chương */}
-      <div className="space-y-3 mb-6">
-        {/* Chương 1 — Active với Progress Bar */}
-        <button
-          type="button"
-          onClick={onStart}
-          className="w-full flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-crimson/40 to-ember/40 border border-gold-deep/50 hover:border-gold-bright hover:shadow-[0_0_18px_rgba(255,215,0,0.15)] transition-all duration-200 group"
-        >
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-gold-bright flex items-center justify-center text-pitch font-bold text-sm shrink-0">
-              ①
-            </div>
-            <div className="text-left flex-1 min-w-0">
-              <p className="font-bold text-cream group-hover:text-gold-bright transition-colors text-sm sm:text-base truncate">
-                Chương 1: 12 Thì trong Tiếng Anh
-              </p>
-              {/* Progress Bar ASCII */}
-              <div className="mt-1.5 flex items-center gap-2">
-                <div className="flex-1 h-2 bg-pitch/60 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-gold-deep to-gold-bright rounded-full transition-all duration-300"
-                    style={{ width: '65%' }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          <span className="text-gold-bright text-xl ml-3 transition-transform duration-200 group-hover:translate-x-1 shrink-0">→</span>
-        </button>
-
-        {/* Chương 2 — Available */}
-        <button
-          type="button"
-          onClick={onStart}
-          className="w-full flex items-center justify-between p-4 rounded-xl bg-pitch/40 border border-gold/25 hover:border-gold/50 hover:bg-gold/5 transition-all duration-200 group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-cream/15 flex items-center justify-center text-cream font-bold text-sm shrink-0">
-              ②
-            </div>
-            <div className="text-left">
-              <p className="font-bold text-cream group-hover:text-gold-bright transition-colors text-sm sm:text-base">
-                Chương 2: Câu Bị Động
-              </p>
-            </div>
-          </div>
-          <span className="text-gold/60 text-xl ml-3 transition-transform duration-200 group-hover:translate-x-1 shrink-0">→</span>
-        </button>
-
-        {/* Chương 3 — Locked */}
-        <button
-          type="button"
-          disabled
-          className="w-full flex items-center justify-between p-4 rounded-xl bg-pitch/40 border border-gold/15 opacity-60 cursor-not-allowed"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-cream/10 flex items-center justify-center text-cream/40 text-sm shrink-0">
-              🔒
-            </div>
-            <div className="text-left">
-              <p className="font-bold text-cream/50 text-sm sm:text-base">
-                Chương 3: Câu Ước
-              </p>
-            </div>
-          </div>
-          <span className="text-gold/40 text-xl ml-3 shrink-0">→</span>
-        </button>
+      <div className="relative z-10 mt-auto max-w-[700px] pt-14">
+        <p className="mb-3 text-sm font-bold text-gold-bright sm:text-base">Sẵn sàng vào sân?</p>
+        <h1 id="home-hero-title" className="max-w-[680px] font-display text-[clamp(2.5rem,5vw,5rem)] font-black leading-[1.02] tracking-[-0.04em] text-cream">
+          Học tiếng Anh.<br /><span className="text-gold-bright">Chinh phục từng thì.</span>
+        </h1>
+        <p className="mt-5 max-w-[540px] text-base leading-relaxed text-cream/80 sm:text-lg">
+          {loading ? "Đang tìm bài học cho bạn..." : error ? "Chọn bài học để bắt đầu luyện tập nhé." : curriculum}
+        </p>
+        <Button variant="danger" size="lg" onClick={onStart} className="mt-7 min-h-14 w-full text-base shadow-[0_5px_0_#7a0f1e,0_12px_24px_rgba(0,0,0,0.35)] sm:w-auto sm:min-w-[260px]">
+          Tiếp tục học <span aria-hidden>→</span>
+        </Button>
       </div>
-
-      {/* Footer: Nút TIẾP TỤC HỌC */}
-      <Button size="lg" className="w-full uppercase tracking-wider" onClick={onStart}>
-        Tiếp Tục Học
-      </Button>
-    </Card>
+      <div className="pointer-events-none absolute bottom-5 right-7 hidden items-center gap-2 text-xs font-medium tracking-[0.15em] text-cream/45 lg:flex" aria-hidden>
+        <span className="h-px w-12 bg-gold/40" /> VIBE ENGLISH LAB
+      </div>
+    </section>
   );
 }

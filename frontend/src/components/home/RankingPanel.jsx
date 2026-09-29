@@ -1,14 +1,14 @@
 import Card from "../ui/Card";
 
 /* ============================================================
-   RankingPanel — tách từ khối "Bảng Xếp Hạng Tuần" của HomePage gốc.
+   RankingPanel — bảng xếp hạng tổng trên HomePage.
    ============================================================ */
 
 export default function RankingPanel({ players }) {
   return (
     <Card className="p-4">
       <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-gold-deep mb-4 flex items-center gap-2">
-        🏆 Bảng Xếp Hạng Tuần
+        🏆 Bảng Xếp Hạng Tổng
       </h3>
 
       <div className="space-y-2">
@@ -45,12 +45,6 @@ export default function RankingPanel({ players }) {
             )}
           </div>
         ))}
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-gold/15 text-center">
-        <button type="button" className="text-xs text-cream/60 hover:text-gold-deep transition-colors">
-          Xem xếp hạng đầy đủ →
-        </button>
       </div>
     </Card>
   );

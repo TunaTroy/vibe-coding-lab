@@ -32,7 +32,7 @@ const RENDERERS = {
   TRUE_FALSE_NOT_GIVEN: TrueFalseNotGivenQuestion,
 };
 
-export default function QuestionRenderer({ question, selected, locked, onSelect }) {
+export default function QuestionRenderer({ question, selected, locked, onSelect, draftMode = false, feedback = null }) {
   const Renderer = RENDERERS[question.type] ?? MultipleChoiceQuestion;
   return (
     <Renderer
@@ -41,6 +41,8 @@ export default function QuestionRenderer({ question, selected, locked, onSelect 
       selected={selected}
       locked={locked}
       onSelect={onSelect}
+      draftMode={draftMode}
+      feedback={feedback}
     />
   );
 }

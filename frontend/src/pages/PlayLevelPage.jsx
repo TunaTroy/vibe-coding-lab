@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import PageShell from "../components/layout/PageShell";
 import QuestionRenderer from "../components/quiz/QuestionRenderer";
@@ -26,6 +26,7 @@ export default function PlayLevelPage() {
   const { levelId = "" } = useParams();
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [data, setData] = useState(null);
   const [loadError, setLoadError] = useState("");
@@ -35,6 +36,7 @@ export default function PlayLevelPage() {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({}); // { [questionId]: optionIndex }
   const [result, setResult] = useState(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -43,18 +45,13 @@ export default function PlayLevelPage() {
     fetchLevelQuestions(levelId)
       .then((res) => {
         if (!mounted) return;
-        // [15]: Level boss không chơi ở UI thường — dẫn sang màn Boss Battle.
-        if (res?.level?.isBoss) {
-          navigate(`/battle/${levelId}`, { replace: true });
-          return;
-        }
         setData(res);
       })
       .catch((err) => mounted && setLoadError(getErrorMessage(err)));
     return () => {
       mounted = false;
     };
-  }, [levelId, navigate]);
+  }, [levelId, retryKey]);
 
   const resetQuiz = useCallback(() => {
     setPhase("answering");
@@ -71,15 +68,23 @@ export default function PlayLevelPage() {
     navigate("/login");
   };
 
+  const knownTenseId = data?.level?.tenseId || location.state?.tenseId;
+  const levelListPath = knownTenseId ? `/tenses/${knownTenseId}/levels` : "/tenses";
+
   if (loadError) {
     return (
       <PageShell user={user} onLogout={handleLogout} active="levels">
         <Card className="p-10 text-center max-w-lg mx-auto">
           <p className="text-3xl" aria-hidden>🟥</p>
           <p className="mt-3 text-sm text-cream/70">{loadError}</p>
-          <Link to="/levels">
-            <Button variant="secondary" className="mt-5">← Quay lại danh sách level</Button>
-          </Link>
+          <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
+            <Button variant="secondary" onClick={() => setRetryKey((key) => key + 1)}>
+              Thử tải lại
+            </Button>
+            <Button variant="ghost" onClick={() => navigate(levelListPath)}>
+              ← Quay lại danh sách level
+            </Button>
+          </div>
         </Card>
       </PageShell>
     );
@@ -98,6 +103,27 @@ export default function PlayLevelPage() {
   const level = data.level;
   const questions = data.questions;
   const total = questions.length;
+
+  if (total === 0) {
+    return (
+      <PageShell user={user} onLogout={handleLogout} active="levels">
+        <Card className="p-10 text-center max-w-lg mx-auto">
+          <p className="text-4xl" aria-hidden>📭</p>
+          <h2 className="mt-3 font-display text-xl font-bold uppercase text-cream">Level chưa có câu hỏi</h2>
+          <p className="mt-2 text-sm text-cream/65">Bài học này đang được chuẩn bị. Hãy quay lại sau nhé!</p>
+          <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
+            <Button variant="secondary" onClick={() => setRetryKey((key) => key + 1)}>
+              Thử tải lại
+            </Button>
+            <Button variant="ghost" onClick={() => navigate(levelListPath)}>
+              ← Danh sách level
+            </Button>
+          </div>
+        </Card>
+      </PageShell>
+    );
+  }
+
   const question = questions[index];
   const isLast = index === total - 1;
   const selected = answers[question.id] ?? null;
@@ -141,7 +167,7 @@ export default function PlayLevelPage() {
 
   // Số câu đúng để hiển thị trong modal — đếm TỪ correctAnswers của backend
   const correctCount = result
-    ? questions.filter((q) => answers[q.id] === result.correctAnswers[q.id]).length
+    ? questions.filter((q) => JSON.stringify(answers[q.id]) === JSON.stringify(result.correctAnswers[q.id])).length
     : 0;
 
   const progressPct = total > 0 ? ((index + (phase !== "answering" ? 1 : 0)) / total) * 100 : 0;
@@ -151,9 +177,13 @@ export default function PlayLevelPage() {
       <div className="max-w-3xl mx-auto">
         {/* Progress header */}
         <div className="flex items-center gap-4 mb-5">
-          <Link to="/levels" className="font-mono text-xs text-cream/60 hover:text-gold-bright transition-colors shrink-0">
+          <button
+            type="button"
+            onClick={() => navigate(levelListPath)}
+            className="font-mono text-xs text-cream/60 hover:text-gold-bright transition-colors shrink-0"
+          >
             ← Levels
-          </Link>
+          </button>
           <div className="flex-1">
             <div className="flex items-baseline justify-between mb-1.5">
               <h2 className="font-display text-lg font-bold uppercase tracking-wide text-cream">
@@ -220,7 +250,7 @@ export default function PlayLevelPage() {
           coinsEarned={result.coinAwarded}
           isWeekendBoost={false}
           onReplay={resetQuiz}
-          onContinue={() => navigate("/levels")}
+          onContinue={() => navigate(levelListPath)}
         />
       )}
     </PageShell>
